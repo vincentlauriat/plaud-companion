@@ -1,0 +1,349 @@
+#!/usr/bin/env python3
+"""CLI interactif pour naviguer dans les enregistrements Plaud."""
+
+import json
+import os
+import sys
+import time
+import urllib.parse
+from datetime import datetime, timezone
+from pathlib import Path
+
+import requests
+from rich import box
+from rich.console import Console
+from rich.markdown import Markdown
+from rich.panel import Panel
+from rich.table import Table
+from rich.theme import Theme
+
+# ─── Config ───────────────────────────────────────────────────────────────────
+
+TOKEN_FILE = Path.home() / ".plaud" / "tokens-mcp.json"
+API_BASE = "https://platform.plaud.ai/developer/api"
+REFRESH_URL = f"{API_BASE}/oauth/third-party/access-token/refresh"
+
+THEME = Theme({
+    "title": "bold cyan",
+    "subtitle": "dim white",
+    "accent": "yellow",
+    "muted": "dim",
+    "ok": "green",
+    "warn": "yellow",
+    "err": "red",
+    "key": "bold magenta",
+})
+
+console = Console(theme=THEME)
+
+# ─── Auth ─────────────────────────────────────────────────────────────────────
+
+def load_tokens() -> dict:
+    if not TOKEN_FILE.exists():
+        console.print("[err]Token Plaud introuvable.[/] Lance d'abord le MCP Plaud via Claude Code.")
+        sys.exit(1)
+    return json.loads(TOKEN_FILE.read_text())
+
+
+def save_tokens(tokens: dict):
+    TOKEN_FILE.write_text(json.dumps(tokens, indent=2))
+
+
+def get_access_token() -> str:
+    tokens = load_tokens()
+    expires_at = tokens.get("expires_at")
+    # Refresh si expiré dans moins de 60 secondes
+    if expires_at and time.time() * 1000 > expires_at - 60_000:
+        refresh = tokens.get("refresh_token")
+        if not refresh:
+            console.print("[err]Token expiré et pas de refresh token.[/] Reconnecte-toi via Claude Code.")
+            sys.exit(1)
+        r = requests.post(
+            REFRESH_URL,
+            headers={"Content-Type": "application/x-www-form-urlencoded", "Accept": "application/json"},
+            data={"refresh_token": refresh},
+            timeout=15,
+        )
+        r.raise_for_status()
+        data = r.json()
+        tokens = {
+            "access_token": data["access_token"],
+            "refresh_token": data.get("refresh_token", refresh),
+            "token_type": data.get("token_type", "Bearer"),
+            "expires_at": int(time.time() * 1000) + data.get("expires_in", 3600) * 1000,
+        }
+        save_tokens(tokens)
+    return tokens["access_token"]
+
+
+def api_get(path: str, **params) -> dict:
+    token = get_access_token()
+    url = f"{API_BASE}/open/third-party{path}"
+    if params:
+        url += "?" + urllib.parse.urlencode(params)
+    r = requests.get(url, headers={"Authorization": f"Bearer {token}"}, timeout=20)
+    r.raise_for_status()
+    return r.json()
+
+# ─── Helpers ──────────────────────────────────────────────────────────────────
+
+def fmt_duration(ms: int) -> str:
+    s = ms // 1000
+    h, rem = divmod(s, 3600)
+    m, sec = divmod(rem, 60)
+    if h:
+        return f"{h}h{m:02d}m"
+    if m:
+        return f"{m}m{sec:02d}s"
+    return f"{sec}s"
+
+
+def fmt_date(iso: str) -> str:
+    try:
+        dt = datetime.fromisoformat(iso.replace("Z", "+00:00"))
+        return dt.strftime("%d/%m/%Y %H:%M")
+    except Exception:
+        return iso[:16]
+
+
+def truncate(s: str, n: int) -> str:
+    return s if len(s) <= n else s[:n - 1] + "…"
+
+
+def ask(prompt: str, default: str = "") -> str:
+    console.print(f"[key]{prompt}[/] ", end="")
+    try:
+        return input().strip()
+    except EOFError:
+        return default
+
+# ─── Vues ─────────────────────────────────────────────────────────────────────
+
+def render_list(recordings: list, page: int, total_on_page: int, page_size: int):
+    table = Table(
+        show_header=True,
+        header_style="bold cyan",
+        box=box.ROUNDED,
+        expand=True,
+        show_lines=False,
+    )
+    table.add_column("#", style="key", width=3, justify="right")
+    table.add_column("Date", style="accent", width=14)
+    table.add_column("Nom", ratio=1)
+    table.add_column("Durée", width=8, justify="right", style="muted")
+
+    for i, rec in enumerate(recordings, 1):
+        table.add_row(
+            str(i),
+            fmt_date(rec.get("start_at") or rec.get("created_at", "")),
+            truncate(rec.get("name") or "(sans nom)", 80),
+            fmt_duration(rec.get("duration", 0)),
+        )
+
+    console.print()
+    console.print(Panel(table, title=f"[title]Enregistrements Plaud[/] — page {page}", subtitle=f"[muted]{total_on_page} résultats[/]"))
+
+
+def render_note(rec: dict, notes: list):
+    name = rec.get("name", "Enregistrement")
+    date = fmt_date(rec.get("start_at") or rec.get("created_at", ""))
+    dur = fmt_duration(rec.get("duration", 0))
+
+    console.print()
+    console.print(Panel(
+        f"[accent]{name}[/]\n[muted]{date} · {dur}[/]",
+        title="[title]Notes IA[/]",
+        box=box.ROUNDED,
+    ))
+
+    if not notes:
+        console.print("[muted]  Aucune note disponible.[/]")
+        return
+
+    for section in notes:
+        title = section.get("data_title") or section.get("data_tab_name", "")
+        content = section.get("data_content", "").strip()
+        if not content:
+            continue
+        console.print()
+        console.rule(f"[accent]{title}[/]", style="dim")
+        console.print(Markdown(content))
+
+
+def parse_source_list(source_list: list) -> list:
+    """Extrait les segments depuis source_list (data_content est une string JSON)."""
+    segments = []
+    for item in source_list:
+        if item.get("data_type") == "transaction":
+            raw = item.get("data_content", "")
+            try:
+                segs = json.loads(raw) if isinstance(raw, str) else raw
+                if isinstance(segs, list):
+                    segments.extend(segs)
+            except (json.JSONDecodeError, TypeError):
+                pass
+    return segments
+
+
+def render_transcript(rec: dict, source_list: list):
+    name = rec.get("name", "Enregistrement")
+    date = fmt_date(rec.get("start_at") or rec.get("created_at", ""))
+
+    console.print()
+    console.print(Panel(
+        f"[accent]{name}[/]\n[muted]{date}[/]",
+        title="[title]Transcription[/]",
+        box=box.ROUNDED,
+    ))
+
+    segments = parse_source_list(source_list)
+    if not segments:
+        console.print("[muted]  Transcription non disponible.[/]")
+        return
+
+    current_speaker = None
+    for seg in segments:
+        speaker = seg.get("speaker") or seg.get("speaker_name") or ""
+        text = seg.get("content") or seg.get("text") or ""
+        ts_ms = seg.get("start_time") or 0
+
+        ts_str = f"{int(ts_ms)//60000:02d}:{(int(ts_ms)//1000)%60:02d}"
+
+        if speaker != current_speaker:
+            current_speaker = speaker
+            console.print(f"\n[key]{speaker}[/]")
+
+        console.print(f"  [muted][{ts_str}][/] {text}")
+
+    console.print()
+
+# ─── Navigation ───────────────────────────────────────────────────────────────
+
+def fetch_page(page: int, page_size: int = 10, query: str = "") -> dict:
+    params: dict = {"page": page, "page_size": page_size}
+    if query:
+        params["query"] = query
+    # L'API ne supporte pas query côté serveur — on filtre localement si besoin
+    # (le MCP le fait aussi en client-side)
+    data = api_get("/files/", **{"page": page, "page_size": page_size})
+    if query:
+        q = query.lower()
+        data["data"] = [r for r in data.get("data", []) if q in (r.get("name") or "").lower()]
+    return data
+
+
+def view_recording(rec: dict):
+    """Sous-menu d'un enregistrement."""
+    file_id = rec["id"]
+
+    while True:
+        name = truncate(rec.get("name") or "(sans nom)", 60)
+        console.print()
+        console.print(Panel(
+            f"[accent]{name}[/]\n[muted]{fmt_date(rec.get('start_at') or rec.get('created_at',''))} · {fmt_duration(rec.get('duration',0))}[/]",
+            title="[title]Enregistrement[/]",
+            box=box.SIMPLE,
+        ))
+        console.print("  [key]n[/] Notes IA    [key]t[/] Transcription    [key]q[/] Retour")
+        choice = ask(">", "q").lower()
+
+        if choice in ("q", "retour", "back", ""):
+            break
+
+        elif choice in ("n", "notes"):
+            with console.status("Chargement des notes…"):
+                full = api_get(f"/files/{file_id}")
+            notes = full.get("note_list") or []
+            render_note(rec, notes)
+            ask("\n[muted]Appuie sur Entrée pour continuer[/]")
+
+        elif choice in ("t", "transcript", "transcription"):
+            with console.status("Chargement de la transcription…"):
+                full = api_get(f"/files/{file_id}")
+            source_list = full.get("source_list") or []
+            render_transcript(rec, source_list)
+            ask("\n[muted]Appuie sur Entrée pour continuer[/]")
+
+
+def main_loop():
+    page = 1
+    page_size = 10
+    query = ""
+    recordings = []
+
+    console.print(Panel(
+        "[title]Plaud CLI[/]\nNavigateur d'enregistrements\n[muted]Tape [key]?[/] pour l'aide[/]",
+        box=box.DOUBLE_EDGE,
+        width=50,
+    ))
+
+    while True:
+        # Chargement
+        with console.status(f"Chargement page {page}…"):
+            data = fetch_page(page, page_size, query)
+        recordings = data.get("data", [])
+
+        render_list(recordings, page, len(recordings), page_size)
+
+        # Commandes disponibles
+        cmds = []
+        if page > 1:
+            cmds.append("[key]p[/] Précédent")
+        if len(recordings) == page_size:
+            cmds.append("[key]n[/] Suivant")
+        cmds += ["[key]s[/] Rechercher", "[key]r[/] Réinitialiser", "[key]q[/] Quitter"]
+        console.print("  " + "    ".join(cmds))
+        console.print("  [muted]Ou tape un numéro (1-{}) pour ouvrir un enregistrement[/]".format(len(recordings)))
+
+        choice = ask(">").lower()
+
+        if choice in ("q", "quit", "exit"):
+            console.print("[muted]Au revoir ![/]")
+            break
+
+        elif choice in ("n", "next") and len(recordings) == page_size:
+            page += 1
+
+        elif choice in ("p", "prev", "previous") and page > 1:
+            page -= 1
+
+        elif choice in ("s", "search", "rechercher"):
+            query = ask("Recherche :")
+            page = 1
+
+        elif choice in ("r", "reset", "réinitialiser"):
+            query = ""
+            page = 1
+
+        elif choice in ("?", "help", "aide"):
+            console.print(Panel(
+                "[key]1-N[/]  Ouvrir un enregistrement\n"
+                "[key]n[/]    Page suivante\n"
+                "[key]p[/]    Page précédente\n"
+                "[key]s[/]    Rechercher par nom\n"
+                "[key]r[/]    Réinitialiser le filtre\n"
+                "[key]q[/]    Quitter",
+                title="Aide",
+                box=box.ROUNDED,
+            ))
+
+        elif choice.isdigit():
+            idx = int(choice) - 1
+            if 0 <= idx < len(recordings):
+                view_recording(recordings[idx])
+            else:
+                console.print(f"[err]Numéro invalide. Choisis entre 1 et {len(recordings)}.[/]")
+        else:
+            console.print("[warn]Commande inconnue. Tape [key]?[/] pour l'aide.[/]")
+
+
+# ─── Point d'entrée ───────────────────────────────────────────────────────────
+
+if __name__ == "__main__":
+    try:
+        main_loop()
+    except KeyboardInterrupt:
+        console.print("\n[muted]Interruption.[/]")
+    except requests.HTTPError as e:
+        console.print(f"[err]Erreur API :[/] {e}")
+        sys.exit(1)
