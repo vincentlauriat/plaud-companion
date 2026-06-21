@@ -5,9 +5,12 @@
 # Usage:   ./Scripts/release.sh <version>
 # Example: ./Scripts/release.sh 1.0.0
 #
-# One-time setup (interactive, asks for an app-specific password):
-#   xcrun notarytool store-credentials "PlaudCompanion-Notary" \
-#     --apple-id "you@example.com" --team-id "KFLACS69T9"
+# Reuses Vincent's shared Apple credentials (same as MarkdownViewer & other Mac apps):
+#   - Developer ID Application: Vincent LAURIAT (KFLACS69T9)
+#   - notary keychain profile "AppliMacVincentGithub" (apple-id vincent@lauriat.fr)
+# If you ever need to recreate the profile:
+#   xcrun notarytool store-credentials "AppliMacVincentGithub" \
+#     --apple-id "vincent@lauriat.fr" --team-id "KFLACS69T9"
 #
 # Overridable via env: SIGNING_IDENTITY, NOTARY_PROFILE
 set -euo pipefail
@@ -27,7 +30,7 @@ PROJECT="Plaud.xcodeproj"
 DMG_VOLNAME="$APP_NAME $VERSION"
 DMG="$ROOT/PlaudCompanion-$VERSION.dmg"
 SIGNING_IDENTITY="${SIGNING_IDENTITY:-Developer ID Application: Vincent LAURIAT (KFLACS69T9)}"
-NOTARY_PROFILE="${NOTARY_PROFILE:-PlaudCompanion-Notary}"
+NOTARY_PROFILE="${NOTARY_PROFILE:-AppliMacVincentGithub}"
 BUILD_NUMBER="$(git rev-list --count HEAD 2>/dev/null || echo 1)"
 
 echo "▶︎ Releasing $APP_NAME $VERSION (build $BUILD_NUMBER)"
@@ -113,7 +116,7 @@ if ! xcrun notarytool history --keychain-profile "$NOTARY_PROFILE" >/dev/null 2>
 ✗ Notary profile "$NOTARY_PROFILE" not found.
   Create it once (interactive):
     xcrun notarytool store-credentials "$NOTARY_PROFILE" \\
-      --apple-id "<your-apple-id>" --team-id "KFLACS69T9"
+      --apple-id "vincent@lauriat.fr" --team-id "KFLACS69T9"
   The DMG was built and signed at: $DMG (NOT yet notarized).
 EOF
   exit 1

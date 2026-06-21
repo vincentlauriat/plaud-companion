@@ -14,12 +14,12 @@ build (Release) → codesign (Developer ID + Hardened Runtime) → DMG (Finder l
    ```bash
    security find-identity -v -p codesigning | grep "Developer ID Application"
    ```
-2. **A notary credential profile** stored in the keychain (asks for an [app‑specific password](https://support.apple.com/en-us/102654)):
+2. **A notary credential profile** stored in the keychain. This project reuses the shared profile **`AppliMacVincentGithub`** (Apple ID `vincent@lauriat.fr`, team `KFLACS69T9`) already used by the maintainer's other Mac apps — so there's usually nothing to do. To (re)create it (asks for an [app‑specific password](https://support.apple.com/en-us/102654)):
    ```bash
-   xcrun notarytool store-credentials "PlaudCompanion-Notary" \
-     --apple-id "you@example.com" --team-id "KFLACS69T9"
+   xcrun notarytool store-credentials "AppliMacVincentGithub" \
+     --apple-id "vincent@lauriat.fr" --team-id "KFLACS69T9"
    ```
-   > The notary credentials are tied to your Apple account, not to the app — you can reuse a profile across projects by passing `NOTARY_PROFILE=<name>`.
+   > The notary credentials are tied to the Apple account, not to the app — the same profile works across projects. Override with `NOTARY_PROFILE=<name>` if needed.
 3. **XcodeGen**: `brew install xcodegen`.
 
 ## Cut a release

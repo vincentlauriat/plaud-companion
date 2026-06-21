@@ -14,7 +14,10 @@
 
 ### Decisions
 - **Pas de Sparkle** (auto-update) pour Plaud Companion — pipeline volontairement réduit à build/sign/DMG/notarize/staple.
-- Identité de signature : `Developer ID Application: Vincent LAURIAT (KFLACS69T9)` (présente dans le keychain). Profil notary `PlaudCompanion-Notary` à créer une fois (étape interactive, hors périmètre auto).
+- **Identifiants Apple réutilisés de MarkdownViewer** : identité `Developer ID Application: Vincent LAURIAT (KFLACS69T9)` + profil notary partagé **`AppliMacVincentGithub`** (apple-id `vincent@lauriat.fr`, team `KFLACS69T9`) — déjà en place, aucune création nécessaire.
+
+### Build
+- **`PlaudCompanion-1.0.0.dmg` produit, signé, notarisé (Apple : Accepted) et stapled** (~497 Ko). Vérifié : `spctl` → *accepted, source=Notarized Developer ID*. Prêt à publier sur la page Releases.
 
 ## 2026-06-21 (suite 10) — Init du repo git
 
