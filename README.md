@@ -114,13 +114,13 @@ It is **read‑only** against Plaud (it never edits or deletes anything in your 
 
 ### Option A — Download (coming soon)
 
-A signed `.dmg` will be published on the [**Releases**](https://github.com/vincentlauriat/plaud-companion/releases) page. Once available:
+A **signed & notarized** `.dmg` will be published on the [**Releases**](https://github.com/vincentlauriat/plaud-companion/releases) page. Once available:
 
-1. Download `Plaud Companion.dmg`.
+1. Download `PlaudCompanion-<version>.dmg`.
 2. Open it and drag **Plaud Companion** into your `Applications` folder.
-3. On first launch, right‑click the app → **Open** (to bypass Gatekeeper for an unsigned/ad‑hoc build).
+3. Launch it normally — because the app is notarized by Apple, Gatekeeper opens it without warnings.
 
-> _Until the DMG is out, please build from source (Option B)._
+> _Until the DMG is out, please build from source (Option B). Maintainers: see [`RELEASE.md`](RELEASE.md) for the signing/notarization pipeline._
 
 ### Option B — Build from source
 
@@ -141,6 +141,8 @@ xcodebuild -project Plaud.xcodeproj -scheme Plaud -configuration Debug build
 ```
 
 The produced app bundle is **`Plaud Companion.app`** (the Xcode target/scheme is named `Plaud`).
+
+> Maintainers building a distributable DMG: run `./Scripts/release.sh <version>` — see [`RELEASE.md`](RELEASE.md).
 
 ---
 
@@ -248,8 +250,12 @@ plaud-companion/
 │   │                               # MarkdownWebView, SettingsView…
 │   ├── Localization/               # Strings (en/fr/zh) + AppSettings
 │   └── Assets.xcassets/            # app icon
+├── Scripts/
+│   ├── release.sh                  # build → sign → DMG → notarize → staple
+│   └── make-dmg-background.swift   # generates the DMG installer background
 ├── plaud                           # optional Python CLI (terminal browser)
 ├── project.yml                     # XcodeGen project definition
+├── RELEASE.md                      # release / notarization guide
 └── README.md
 ```
 

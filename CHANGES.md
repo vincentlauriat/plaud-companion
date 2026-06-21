@@ -1,5 +1,21 @@
 # CHANGES
 
+## 2026-06-21 (suite 11) — Pipeline DMG + notarisation
+
+### Added
+- **`Scripts/release.sh`** : pipeline de release inspiré de MarkdownViewer (sans Sparkle) — `xcodegen` → build Release (`CODE_SIGNING_ALLOWED=NO`) → codesign manuel **Developer ID + Hardened Runtime** (`--options runtime --timestamp`, retry ×5) → DMG avec layout Finder (background custom, lien `/Applications`, `hdiutil` UDRW→UDZO) → `notarytool submit --wait` → `stapler staple/validate`. Variables `SIGNING_IDENTITY` / `NOTARY_PROFILE` overridables ; vérifie le profil notary et explique comment le créer s'il manque.
+- **`Scripts/make-dmg-background.swift`** : génère le fond du DMG (540×380, flèche orange Plaud).
+- **`RELEASE.md`** : guide mainteneur (prérequis Apple Developer ID, `notarytool store-credentials`, cut release, publication `gh release`, versioning).
+
+### Changed
+- `project.yml` : ajout `MARKETING_VERSION` (1.0.0) / `CURRENT_PROJECT_VERSION` (1) ; `Info.plist` → `CFBundleShortVersionString = $(MARKETING_VERSION)`, `CFBundleVersion = $(CURRENT_PROJECT_VERSION)`. Le script injecte la version (arg) et le build number (nb de commits git).
+- `.gitignore` : ignore `*.dmg` et `dmg-staging/` (les binaires vont sur la page Releases, pas dans git).
+- `README.md` : section Download mise à jour (DMG **notarisé** → ouverture sans avertissement Gatekeeper) + renvois vers `RELEASE.md` et `Scripts/release.sh` ; project layout enrichi (`Scripts/`, `RELEASE.md`).
+
+### Decisions
+- **Pas de Sparkle** (auto-update) pour Plaud Companion — pipeline volontairement réduit à build/sign/DMG/notarize/staple.
+- Identité de signature : `Developer ID Application: Vincent LAURIAT (KFLACS69T9)` (présente dans le keychain). Profil notary `PlaudCompanion-Notary` à créer une fois (étape interactive, hors périmètre auto).
+
 ## 2026-06-21 (suite 10) — Init du repo git
 
 ### Added

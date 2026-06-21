@@ -81,6 +81,12 @@ NotionSyncService ──┬─ état: notion-sync.json (recordingID → {pageID,
 - **Markdown → blocs** : `MarkdownToNotion` gère headings (`#`/`##`/`###`), listes (`-`/`*`/`1.`), citations (`>`), paragraphes ; découpe rich_text à 2000 caractères.
 - **Pré-requis utilisateur** : créer une intégration sur notion.so/my-integrations, puis partager la database cible avec l'intégration (sinon HTTP 404).
 
+## Release (DMG + notarisation)
+
+- `Scripts/release.sh <version>` : `xcodegen` → build Release (`CODE_SIGNING_ALLOWED=NO`) → codesign **Developer ID + Hardened Runtime** (`--options runtime --timestamp`) → DMG (layout Finder + `Scripts/make-dmg-background.swift`, `hdiutil` UDRW→UDZO) → `notarytool submit --wait` → `stapler staple`.
+- Pas de Sparkle (pas d'auto-update). Versioning : `MARKETING_VERSION` (arg) + `CURRENT_PROJECT_VERSION` (nb de commits git) injectés au build, lus par `Info.plist` via `$(…)`.
+- Détails et prérequis : voir `RELEASE.md`.
+
 ## Build
 
 - Génération projet : `xcodegen generate` (régénérer après tout ajout de fichier source).
