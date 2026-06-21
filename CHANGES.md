@@ -17,7 +17,8 @@
 - **Identifiants Apple réutilisés de MarkdownViewer** : identité `Developer ID Application: Vincent LAURIAT (KFLACS69T9)` + profil notary partagé **`AppliMacVincentGithub`** (apple-id `vincent@lauriat.fr`, team `KFLACS69T9`) — déjà en place, aucune création nécessaire.
 
 ### Build
-- **`PlaudCompanion-1.0.0.dmg` produit, signé, notarisé (Apple : Accepted) et stapled** (~497 Ko). Vérifié : `spctl` → *accepted, source=Notarized Developer ID*. Prêt à publier sur la page Releases.
+- **`PlaudCompanion-1.0.0.dmg` produit, signé, notarisé (Apple : Accepted) et stapled** (~497 Ko). Vérifié : `spctl` → *accepted, source=Notarized Developer ID*.
+- **Release `v1.0.0` publiée sur GitHub** avec le DMG en asset : https://github.com/vincentlauriat/plaud-companion/releases/tag/v1.0.0 (commits poussés sur `main`).
 
 ## 2026-06-21 (suite 10) — Init du repo git
 
