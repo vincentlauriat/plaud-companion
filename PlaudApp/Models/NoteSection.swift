@@ -8,6 +8,8 @@ struct NoteSection: Codable, Identifiable {
     let dataTabName: String?
     let dataContent: String?
     let dataLink: String?
+    /// Chemins d'images relatifs → URLs S3 pré-signées téléchargeables.
+    let downloadLinkMap: [String: String]?
 
     enum CodingKeys: String, CodingKey {
         case dataId = "data_id"
@@ -16,9 +18,32 @@ struct NoteSection: Codable, Identifiable {
         case dataTabName = "data_tab_name"
         case dataContent = "data_content"
         case dataLink = "data_link"
+        case downloadLinkMap = "download_link_map"
     }
 
     var displayTitle: String { dataTitle ?? dataTabName ?? "" }
+
+    /// `true` si le contenu n'est pas inline et doit être téléchargé depuis `dataLink`.
+    var contentIsRemote: Bool {
+        (dataContent?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
+            && (dataLink?.isEmpty == false)
+    }
+
+    /// Remplace les chemins d'images relatifs par leurs URLs téléchargeables.
+    func resolvingImages(in markdown: String) -> String {
+        guard let map = downloadLinkMap, !map.isEmpty else { return markdown }
+        var s = markdown
+        for (path, url) in map {
+            // Cible la forme Markdown `](chemin)` pour ne pas toucher d'autres textes.
+            s = s.replacingOccurrences(of: "(\(path))", with: "(\(url))")
+        }
+        return s
+    }
+
+    /// URLs téléchargeables de toutes les images associées à cette note.
+    var imageURLs: [URL] {
+        (downloadLinkMap?.values ?? [:].values).compactMap { URL(string: $0) }
+    }
 }
 
 struct TranscriptSegment: Codable {

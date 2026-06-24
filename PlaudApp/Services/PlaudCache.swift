@@ -49,6 +49,13 @@ actor PlaudCache {
         )
     }
 
+    /// Invalide le cache de notes d'un seul enregistrement (force un re-fetch).
+    func clearNotes(id: String) {
+        try? FileManager.default.removeItem(
+            at: cacheDir.appendingPathComponent("notes/\(id).json")
+        )
+    }
+
     func clearAll() {
         try? FileManager.default.removeItem(at: cacheDir)
         try? FileManager.default.createDirectory(at: cacheDir, withIntermediateDirectories: true)

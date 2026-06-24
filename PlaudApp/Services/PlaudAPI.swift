@@ -25,6 +25,17 @@ actor PlaudAPI {
         try await get("/files/\(id)")
     }
 
+    /// Récupère le contenu Markdown d'une note depuis une URL S3 pré-signée
+    /// (cas des `consumer_note` / `high_light` dont `data_content` est vide).
+    func fetchNoteMarkdown(from urlString: String) async throws -> String {
+        guard let url = URL(string: urlString) else { throw URLError(.badURL) }
+        let (data, resp) = try await URLSession.shared.data(from: url)
+        if let http = resp as? HTTPURLResponse, http.statusCode != 200 {
+            throw PlaudError.httpError(http.statusCode)
+        }
+        return String(data: data, encoding: .utf8) ?? ""
+    }
+
     /// Récupère la transcription polie depuis une URL S3 pré-signée (sans auth).
     func fetchPolished(from urlString: String) async throws -> [TranscriptSegment] {
         guard let url = URL(string: urlString) else { throw URLError(.badURL) }

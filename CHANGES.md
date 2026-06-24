@@ -1,5 +1,80 @@
 # CHANGES
 
+## 2026-06-24 (suite 2) — Rendu Markdown des notes plus complet
+
+### Fixed
+- **Éléments Markdown non interprétés dans les notes.** Analyse du contenu réel : `#### ` (titres niv. 4, 43×) affichés en texte brut, et surtout **cases à cocher `- [ ]` / `- [x]` (1079×)** rendues `[ ]` littéral. Corrigé dans `MarkdownWebView.convert`.
+- **`---` parasite.** Une ligne séparatrice `---` était captée par la règle « `--` détail » (affichait un `-` isolé) ; HR remis en priorité et restreint aux lignes de tirets/étoiles/underscores.
+- **Listes éclatées.** Bug préexistant de `openList` : chaque item était enfermé dans son propre `<ul>`. Les items de même niveau sont désormais regroupés et l'imbrication est correcte.
+
+### Added (rendu `MarkdownWebView.convert`)
+- Titres **niveau 1 à 6** (`#`…`######`) ; **cases à cocher** ☐/☑ stylées ; **liens** `[texte](url)` + **URLs nues** (autolink, URLs protégées de l'emphase) ; **barré** `~~…~~` ; **blocs de code** ```` ``` ```` ; **tableaux** GFM `| … |`.
+- CSS associé : h4-h6, `li.task`, `<a>`, `<del>`, `<pre>/<code>`, `<table>`.
+
+### Changed (cohérence sync Notion)
+- `MarkdownToNotion` : `#### `+ → `heading_3` (plafond Notion) ; cases à cocher → blocs **`to_do`** natifs (avec état coché). → Notion reçoit des vraies cases à cocher au lieu de `[ ]` en texte.
+
+### Validation
+- `convert()` (fonction pure) extraite et **testée hors app** sur des cas réels (titres, cases, tableau, liens, code, barré, imbrication) — rendu HTML vérifié. Build ✅.
+
+## 2026-06-24 (suite) — Sync Notion : contenu complet des notes + images persistantes
+
+### Fixed
+- **Sync Notion incomplète.** `buildMarkdown` n'utilisait que `dataContent`, donc les notes `consumer_note` / `high_light` (contenu sur S3) partaient **vides** vers Notion (titre seul). Désormais leur contenu est téléchargé et poussé en entier.
+- **Images absentes/cassées dans Notion.** `MarkdownToNotion` ne gérait pas les images ; les chemins relatifs partaient en texte brut. Désormais les images sont **téléversées dans Notion** (persistantes) et insérées comme blocs image.
+
+### Added
+- `NotionAPI.uploadFile(data:filename:contentType:token:)` — flux *file upload* Notion en 2 temps (`POST /file_uploads` puis envoi `multipart/form-data`). Validé avec `Notion-Version 2022-06-28`.
+- `MarkdownToNotion.blocks(from:imageUploads:)` + `imagePaths(in:)` — produit des blocs image `file_upload` ; les images sans upload sont retirées (pas de texte cassé).
+- `NotionSyncService.ResolvedNote` (titre + markdown brut + map chemin→URL S3) ; `buildBlocks(body:item:token:)` téléverse à la demande les images **référencées** (dédoublonnage par URL), `uploadImage(s3url:token:)`, `contentType(for:)`.
+- `RecordingsViewModel.rawNoteMarkdown(_:)` — markdown brut d'une note (inline ou S3) pour la sync.
+
+### Changed
+- `NotionSyncService.Item.notes` : `[NoteSection]` → `[ResolvedNote]`.
+- `syncToNotion` re-fetch un **détail frais** par enregistrement (liens S3 valides), repli sur cache si réseau KO ; assemble les `ResolvedNote`.
+- **Hash de sync stable** : calculé sur le markdown **brut** (chemins relatifs), pas sur les URLs S3 volatiles → pas de re-sync en boucle ; les images ne sont téléversées que lors d'un create/update réel (jamais sur un `skipped`).
+
+### Notes techniques
+- Première sync après cette mise à jour : les pages ayant des notes distantes seront **mises à jour une fois** (le hash inclut maintenant leur contenu).
+- Coût : la sync fait désormais un appel `getFile` par enregistrement (liens frais) + un upload par image lors des create/update.
+
+## 2026-06-24 — Notes multiples + images des notes
+
+### Fixed
+- **Une seule note affichée par enregistrement.** `NotesView` ne gardait que les sections `auto_sum_note` ; les notes `consumer_note` (notes par template) et `high_light` (« Points à retenir ») étaient téléchargées mais jamais affichées. L'app montre désormais **toutes** les notes du `note_list`.
+- **Images des notes en lien cassé.** `MarkdownWebView.convert` ne gérait pas la syntaxe image Markdown `![alt](url)`, et les images Plaud sont référencées par **chemin relatif** (`permanent/…/mark/xxx.jpg`). Résultat : aucune image ne s'affichait.
+
+### Added
+- **Sélecteur de notes** (menu déroulant) dans l'onglet « Notes IA » quand un enregistrement a plusieurs notes (Résumé, Points à retenir, et chaque note par titre).
+- **Rendu des images** dans les notes : résolution des chemins relatifs via le nouveau champ `NoteSection.downloadLinkMap` (chemin → URL S3 pré-signée), support `<img>` dans `MarkdownWebView.convert` (avec protection des URLs contre les règles d'emphase) + CSS image (coins arrondis, ombre, responsive).
+- **Téléchargement des images** d'une note vers le disque (`ImageExporter`) : `NSSavePanel` pour une image, `NSOpenPanel` (choix de dossier) pour plusieurs.
+- `PlaudAPI.fetchNoteMarkdown(from:)` — télécharge le Markdown d'une note depuis `data_link` (S3) pour les notes dont `data_content` est vide (`consumer_note`/`high_light`).
+- `RecordingsViewModel.loadNoteContent(_:)` + cache mémoire `noteContents` (par `data_id`) ; contenu résolu (images incluses), inline ou distant.
+- Clés de localisation fr/en/zh : `note_summary`, `note_highlights`, `note_generic`, `save_image`, `save_images`, `save_images_help`.
+
+### Changed
+- `NotesView` prend désormais le `RecordingsViewModel` (au lieu d'un `[NoteSection]`) pour gérer le chargement à la demande du contenu distant et le cache.
+- `NoteSection` : nouveaux champs/aides `downloadLinkMap`, `contentIsRemote`, `resolvingImages(in:)`, `imageURLs`.
+
+### Notes techniques
+- Les URLs S3 (contenu distant + images) sont **pré-signées et expirent** ; elles ne sont pas mises en cache sur disque. Le stale-while-revalidate de `selectRecording` (fix du 06-23) garantit des liens frais à chaque ouverture.
+
+## 2026-06-23 — Rafraîchissement des données d'un enregistrement (fix cache speakers)
+
+### Fixed
+- **Les noms d'interlocuteurs (et notes) modifiés côté Plaud ne se mettaient jamais à jour dans l'app.** Cause : `selectRecording` retournait le cache `notes/{id}.json` sans jamais revalider, et `loadTranscript()` était bloqué par son guard `transcriptSegments.isEmpty` tant qu'on restait sur la même réunion → `transcriptSegments` (source des onglets Transcription & Interlocuteurs) jamais re-fetché.
+
+### Added
+- `PlaudCache.clearNotes(id:)` — invalide le cache d'un seul enregistrement.
+- `RecordingsViewModel.refreshCurrentRecording()` — force le re-téléchargement de l'enregistrement sélectionné (notes + transcription + plan) en ignorant le cache, puis réécrit le cache.
+- Bouton **rafraîchir** (icône `arrow.clockwise`) dans l'en-tête du détail d'un enregistrement (`RecordingDetailView`).
+- Section **Cache local** dans les Réglages avec bouton **Vider le cache** (branche le `PlaudCache.clearAll()` déjà existant, jusqu'ici non exposé en UI).
+- Clés de localisation fr/en/zh : `refresh_recording_help`, `settings_cache`, `cache_clear`, `cache_clear_help`, `cache_cleared`.
+
+### Changed
+- `selectRecording` passe en **stale-while-revalidate** : affiche le cache instantanément (si présent), puis revalide depuis le serveur en arrière-plan et remplit d'emblée `transcriptSegments` / `outlineSegments` (l'onglet Interlocuteurs est donc à jour sans second appel API). La réponse est ignorée si l'utilisateur a changé de sélection entre-temps.
+- Helper privé `fetchDetail(for:)` factorise la logique de fetch + cache partagée par `selectRecording` et `refreshCurrentRecording`.
+
 ## 2026-06-21 (suite 11) — Pipeline DMG + notarisation
 
 ### Added

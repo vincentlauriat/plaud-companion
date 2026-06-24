@@ -4,6 +4,7 @@ struct SettingsView: View {
     @Environment(AppSettings.self) private var settings
     @State private var testing = false
     @State private var testResult: String?
+    @State private var cacheCleared = false
 
     var body: some View {
         @Bindable var settings = settings
@@ -56,6 +57,21 @@ struct SettingsView: View {
                 Text(settings.t("notion_help"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
+            }
+
+            Section(settings.t("settings_cache")) {
+                Button(settings.t("cache_clear"), role: .destructive) {
+                    Task {
+                        await PlaudCache.shared.clearAll()
+                        cacheCleared = true
+                    }
+                }
+                .help(settings.t("cache_clear_help"))
+                if cacheCleared {
+                    Text(settings.t("cache_cleared"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             Section(settings.t("settings_about")) {

@@ -12,21 +12,32 @@ struct RecordingDetailView: View {
         VStack(spacing: 0) {
             // Header
             if let rec = recording {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(rec.displayName)
-                        .font(.title2.bold())
-                        .textSelection(.enabled)
-                    HStack(spacing: 6) {
-                        Label(rec.dateFormatted, systemImage: "calendar")
-                        if !rec.durationFormatted.isEmpty {
-                            Text("·").foregroundStyle(.tertiary)
-                            Label(rec.durationFormatted, systemImage: "clock")
+                HStack(alignment: .top, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(rec.displayName)
+                            .font(.title2.bold())
+                            .textSelection(.enabled)
+                        HStack(spacing: 6) {
+                            Label(rec.dateFormatted, systemImage: "calendar")
+                            if !rec.durationFormatted.isEmpty {
+                                Text("·").foregroundStyle(.tertiary)
+                                Label(rec.durationFormatted, systemImage: "clock")
+                            }
                         }
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
                     }
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                    Button {
+                        Task { await vm.refreshCurrentRecording() }
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
+                    }
+                    .buttonStyle(.borderless)
+                    .disabled(vm.isLoadingDetail)
+                    .help(settings.t("refresh_recording_help"))
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 20)
                 .padding(.vertical, 14)
             }
@@ -54,9 +65,9 @@ struct RecordingDetailView: View {
                 } else {
                     switch selectedTab {
                     case 0:
-                        NotesView(notes: vm.notes, summaryOnly: true)
+                        NotesView(vm: vm, summaryOnly: true)
                     case 1:
-                        NotesView(notes: vm.notes, summaryOnly: false)
+                        NotesView(vm: vm, summaryOnly: false)
                     case 2:
                         transcriptTab
                     case 3:
