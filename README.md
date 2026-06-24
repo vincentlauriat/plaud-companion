@@ -58,7 +58,7 @@ It is **read‑only** against Plaud (it never edits or deletes anything in your 
 |---|---|
 | **Recordings list** | Paginated load of every recording, grouped into *Today / This week / Earlier*, with live search and a cache indicator. |
 | **Summary tab** | The Plaud AI summary, rendered as clean HTML (headings, lists, quotes, code, **images**). |
-| **AI Notes tab** | **All** note types (summary, key points, every template note) via a **dropdown**, with rich Markdown — headings, **task checkboxes**, links, code, tables — and **inline images** you can save to disk. |
+| **AI Notes tab** | **All** note types (summary, key points, every template note) via a **dropdown**, with rich Markdown — headings, **task checkboxes**, links, code, tables — and **inline images** you can save to disk. Export any note to **Word (.docx)** with its layout and images. |
 | **Transcription tab** | Three views: **Raw** (with timestamps & speakers), **Polished** (Plaud's cleaned‑up version), and **Outline** (chapters). |
 | **Interactive outline** | Click a chapter → it expands and shows the raw transcript segments that fall within its time range. |
 | **Speakers tab** | Per‑speaker talk time, percentage, and number of interventions, with progress bars. |
@@ -168,7 +168,7 @@ Plaud Companion does **not** ask for your Plaud password. Instead it reuses the 
 - **Refresh** — the toolbar refresh button re‑fetches the full list from Plaud.
 - **Read** — select a recording to open the detail view with four tabs:
   - **Summary** — the AI summary.
-  - **AI Notes** — pick any note from the **dropdown** (summary, key points, template notes); rich Markdown with **inline images** you can save to disk (**Save images** button).
+  - **AI Notes** — pick any note from the **dropdown** (summary, key points, template notes); rich Markdown with **inline images** you can save to disk (**Save images**), or export the note to **Word (.docx)** with layout + images (**Export to Word**).
   - **Transcription** — switch between **Raw**, **Polished**, and **Outline**.
   - **Speakers** — talk‑time statistics per speaker.
 - **Keep it fresh** — opening a recording revalidates it in the background. Use the **Refresh** button in the detail header to force a re‑download of a single recording (handy after you rename speakers or edit notes in Plaud).
@@ -272,6 +272,7 @@ plaud-companion/
 - [x] Summary / AI Notes / Transcription (Raw · Polished · Outline) / Speakers tabs
 - [x] Clean Markdown rendering (WebView) — headings, task checkboxes, links, code, tables, images
 - [x] Show **all** AI notes per recording (dropdown) + render & **export note images**
+- [x] **Export a note to Word (.docx)** with layout and embedded images
 - [x] Interactive outline → transcript drill‑down
 - [x] Per‑recording refresh + stale‑while‑revalidate + clear‑cache
 - [x] **One‑way incremental Notion sync** (database or page, auto column mapping)

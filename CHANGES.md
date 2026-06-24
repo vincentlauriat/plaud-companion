@@ -1,5 +1,19 @@
 # CHANGES
 
+## 2026-06-24 (suite 3) — Export d'une note en Word (.docx)
+
+### Added
+- **Export Word** : bouton « Exporter en Word » dans l'onglet Notes (à côté de « Enregistrer les images »). Génère un vrai `.docx` de la note affichée, avec **mise en page** (titres, listes, cases à cocher, gras/italique/barré/code, tableaux, citations) et **images embarquées**.
+- `DocxExporter` (dans `NotesView.swift`) : génération **Office Open XML à la main** — convertisseur Markdown → corps `document.xml`, téléchargement + intégration des images dans `word/media`, et un mini **écrivain ZIP** maison (`DocxZip` + `DocxCRC32`, méthode « stored »). Aucune dépendance externe.
+- Clés de localisation fr/en/zh : `export_word`, `export_word_help`.
+
+### Decisions
+- **Pourquoi générer le `.docx` à la main** : les API natives `NSAttributedString` (`.officeOpenXML`) **n'embarquent pas les images** dans un `.docx` (seul `.rtfd`, un bundle, le fait — vérifié). La génération OOXML directe est la seule voie native pour un Word autonome avec images.
+- Images redimensionnées (largeur max ~600 px) ; conversion px → EMU (×9525).
+
+### Validation
+- Pipeline validé hors app : `document.xml` **bien formé** (xmllint), image présente dans `word/media`, document **relu par `textutil`** (titres, cases à cocher, listes, tableau, échappement XML `&`/`<`). Build ✅.
+
 ## 2026-06-24 (suite 2) — Rendu Markdown des notes plus complet
 
 ### Fixed

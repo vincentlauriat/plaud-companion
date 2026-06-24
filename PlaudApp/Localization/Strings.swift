@@ -86,6 +86,8 @@ enum Strings {
             "save_image": "Enregistrer l'image",
             "save_images": "Enregistrer les images",
             "save_images_help": "Enregistrer les images de cette note sur le disque",
+            "export_word": "Exporter en Word",
+            "export_word_help": "Générer un document Word (.docx) de cette note, mise en page et images comprises",
 
             // Notion
             "settings_notion": "Synchronisation Notion",
@@ -177,6 +179,8 @@ enum Strings {
             "save_image": "Save image",
             "save_images": "Save images",
             "save_images_help": "Save this note's images to disk",
+            "export_word": "Export to Word",
+            "export_word_help": "Generate a Word (.docx) document of this note, with layout and images",
 
             // Notion
             "settings_notion": "Notion sync",
@@ -268,6 +272,8 @@ enum Strings {
             "save_image": "保存图片",
             "save_images": "保存图片",
             "save_images_help": "将此笔记的图片保存到磁盘",
+            "export_word": "导出为 Word",
+            "export_word_help": "生成此笔记的 Word (.docx) 文档（含排版和图片）",
 
             // Notion
             "settings_notion": "Notion 同步",

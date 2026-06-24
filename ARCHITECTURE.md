@@ -60,7 +60,11 @@ Source de vérité technique du projet Plaud.
 ## UI — onglets de détail
 
 1. **Résumé** — note `auto_sum_note` (rendu WebView, images incluses).
-2. **Notes IA** — **sélecteur déroulant** de toutes les notes (`auto_sum_note`, `consumer_note`, `high_light`). Contenu inline ou téléchargé depuis `data_link` à la demande (`loadNoteContent`). Images résolues via `download_link_map` ; bouton **« Enregistrer les images »** (`ImageExporter` → `NSSavePanel`/`NSOpenPanel`).
+2. **Notes IA** — **sélecteur déroulant** de toutes les notes (`auto_sum_note`, `consumer_note`, `high_light`). Contenu inline ou téléchargé depuis `data_link` à la demande (`loadNoteContent`). Images résolues via `download_link_map` ; bouton **« Enregistrer les images »** (`ImageExporter` → `NSSavePanel`/`NSOpenPanel`) ; bouton **« Exporter en Word »** (`DocxExporter`).
+
+## Export Word (`DocxExporter`, dans `NotesView.swift`)
+
+Génère un véritable `.docx` (Office Open XML) **à la main**, car les API `NSAttributedString` (`.officeOpenXML`) n'embarquent pas les images (seul `.rtfd`, un bundle, le fait). Pipeline : Markdown → corps `word/document.xml` (titres, listes, cases à cocher, gras/italique/barré/code, tableaux, citations), téléchargement + intégration des images dans `word/media` (résolution px→EMU ×9525, largeur cap ~600 px, relations `r:embed`), puis empaquetage via un mini écrivain ZIP maison (`DocxZip` + `DocxCRC32`, méthode « stored », sans dépendance). Validé hors app (xmllint + `textutil`).
 3. **Transcription** — sous-onglets : Brute · Polie · Plan.
 4. **Interlocuteurs** — stats de temps de parole par locuteur (depuis `transaction`).
 
