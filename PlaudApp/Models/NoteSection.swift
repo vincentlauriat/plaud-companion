@@ -21,6 +21,39 @@ struct NoteSection: Codable, Identifiable {
         case downloadLinkMap = "download_link_map"
     }
 
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        dataId = try c.decode(String.self, forKey: .dataId)
+        dataType = try c.decode(String.self, forKey: .dataType)
+        dataTitle = try c.decodeIfPresent(String.self, forKey: .dataTitle)
+        dataTabName = try c.decodeIfPresent(String.self, forKey: .dataTabName)
+        dataLink = try c.decodeIfPresent(String.self, forKey: .dataLink)
+        downloadLinkMap = try c.decodeIfPresent([String: String].self, forKey: .downloadLinkMap)
+
+        // Décode dataContent : peut être une chaîne JSON imbriquée (nécessite un décodage supplémentaire)
+        // ou une chaîne simple (Markdown). Extrait ai_content si présent, sinon utilise la chaîne brute.
+        let rawContent = try c.decodeIfPresent(String.self, forKey: .dataContent)
+        if let raw = rawContent, !raw.isEmpty,
+           let data = raw.data(using: .utf8),
+           let jsonObj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let aiContent = jsonObj["ai_content"] as? String {
+            dataContent = aiContent
+        } else {
+            dataContent = rawContent
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(dataId, forKey: .dataId)
+        try c.encode(dataType, forKey: .dataType)
+        try c.encodeIfPresent(dataTitle, forKey: .dataTitle)
+        try c.encodeIfPresent(dataTabName, forKey: .dataTabName)
+        try c.encodeIfPresent(dataContent, forKey: .dataContent)
+        try c.encodeIfPresent(dataLink, forKey: .dataLink)
+        try c.encodeIfPresent(downloadLinkMap, forKey: .downloadLinkMap)
+    }
+
     var displayTitle: String { dataTitle ?? dataTabName ?? "" }
 
     /// `true` si le contenu n'est pas inline et doit être téléchargé depuis `dataLink`.

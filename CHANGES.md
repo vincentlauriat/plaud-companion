@@ -1,5 +1,17 @@
 # CHANGES
 
+## 2026-06-25 — Fix : décodage des notes abîmées (JSON imbriqué)
+
+### Fixed
+- **Notes affichées cassées dans l'app** (accents visibles comme `é`, sauts de ligne comme `\\n`). Cause : l'API Plaud retourne `data_content` comme une **chaîne JSON échappée** (ex. `"{\"ai_content\": \"...\"}"`), que Swift décodait comme une simple string sans parser le JSON imbriqué. Résultat : la chaîne brute avec tous les échappements restait visible.
+- Solution : ajout d'un décodeur personnalisé `init(from:)` dans `NoteSection` qui détecte et parse le JSON imbriqué, extrait le champ `ai_content`, et l'utilise au lieu de la chaîne brute. Les notes dont `data_content` est du JSON valide sont désormais correctement décodées.
+
+### Changed
+- `NoteSection` : ajout de `init(from:)` et `encode(to:)` personnalisés pour gérer le décodage imbriqué de `data_content`.
+
+### Validation
+- Test unitaire (script Swift) : décodage d'une note test avec accents (`café`, `élève`) et sauts de ligne — tous les caractères spéciaux sont maintenant décodés correctement ✅. Build ✅.
+
 ## 2026-06-24 (suite 3) — Export d'une note en Word (.docx)
 
 ### Added
