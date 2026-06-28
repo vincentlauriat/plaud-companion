@@ -57,12 +57,13 @@ It is **read‑only** against Plaud (it never edits or deletes anything in your 
 | Area | What you get |
 |---|---|
 | **Recordings list** | Paginated load of every recording, grouped into *Today / This week / Earlier*, with live search and a cache indicator. |
-| **Summary tab** | The Plaud AI summary, rendered as clean HTML (headings, lists, quotes, code). |
-| **AI Notes tab** | All note sections (`auto_sum_note`, `auto_sum_brief`…) with proper Markdown rendering. |
+| **Summary tab** | The Plaud AI summary, rendered as clean HTML (headings, lists, quotes, code, **images**). |
+| **AI Notes tab** | **All** note types (summary, key points, every template note) via a **dropdown**, with rich Markdown — headings, **task checkboxes**, links, code, tables — and **inline images** you can save to disk. Export any note to **Word (.docx)** with its layout and images. |
 | **Transcription tab** | Three views: **Raw** (with timestamps & speakers), **Polished** (Plaud's cleaned‑up version), and **Outline** (chapters). |
 | **Interactive outline** | Click a chapter → it expands and shows the raw transcript segments that fall within its time range. |
 | **Speakers tab** | Per‑speaker talk time, percentage, and number of interventions, with progress bars. |
-| **Notion sync** | One‑way **Plaud → Notion**, incremental (diff by content hash), works with a **database** *or* a **page**, auto‑fills table columns. |
+| **Always up to date** | Opening a recording revalidates it in the background; a per‑recording **Refresh** button and a **Clear cache** action force a re‑download (e.g. after renaming speakers in Plaud). |
+| **Notion sync** | One‑way **Plaud → Notion**, incremental (diff by content hash), works with a **database** *or* a **page**, auto‑fills table columns, pushes **every note in full** and **uploads images** as persistent Notion files. |
 | **Local cache** | Recordings and notes are cached under *Application Support* for instant reopening and offline reading. |
 | **Localization** | English 🇬🇧 · French 🇫🇷 · Chinese 🇨🇳, plus *follow system language*. |
 | **Appearance** | Light · Dark · System. |
@@ -167,11 +168,12 @@ Plaud Companion does **not** ask for your Plaud password. Instead it reuses the 
 - **Refresh** — the toolbar refresh button re‑fetches the full list from Plaud.
 - **Read** — select a recording to open the detail view with four tabs:
   - **Summary** — the AI summary.
-  - **AI Notes** — all note sections, Markdown‑rendered.
+  - **AI Notes** — pick any note from the **dropdown** (summary, key points, template notes); rich Markdown with **inline images** you can save to disk (**Save images**), or export the note to **Word (.docx)** with layout + images (**Export to Word**).
   - **Transcription** — switch between **Raw**, **Polished**, and **Outline**.
   - **Speakers** — talk‑time statistics per speaker.
+- **Keep it fresh** — opening a recording revalidates it in the background. Use the **Refresh** button in the detail header to force a re‑download of a single recording (handy after you rename speakers or edit notes in Plaud).
 - **Explore the outline** — in the **Outline** sub‑tab, click any chapter to expand it and reveal the transcript lines (timestamp · speaker · text) that belong to that chapter's time range.
-- **Settings** (`⌘,`) — appearance, language, and the **Notion** panel (below).
+- **Settings** (`⌘,`) — appearance, language, **Clear cache**, and the **Notion** panel (below).
 
 ---
 
@@ -216,7 +218,8 @@ Columns that don't exist or aren't recognized are simply ignored — so this wor
 ### What gets pushed
 
 - **Title** = recording name
-- **Body** = a metadata line (date · duration) + the **AI summary** + the **AI notes** (converted to Notion blocks)
+- **Body** = a metadata line (date · duration) + **every AI note** (summary, key points, and each template note), converted to Notion blocks — headings, **checkboxes as native `to_do`**, lists, quotes, code, tables
+- **Images** in the notes are **uploaded to Notion as files** (file‑upload API), so they stay visible instead of breaking when Plaud's temporary links expire
 - _(Transcriptions are not pushed by default — see the roadmap.)_
 
 ### Resetting
@@ -267,9 +270,13 @@ plaud-companion/
 
 - [x] Recordings list, search, date grouping, local cache
 - [x] Summary / AI Notes / Transcription (Raw · Polished · Outline) / Speakers tabs
-- [x] Clean Markdown rendering (WebView)
+- [x] Clean Markdown rendering (WebView) — headings, task checkboxes, links, code, tables, images
+- [x] Show **all** AI notes per recording (dropdown) + render & **export note images**
+- [x] **Export a note to Word (.docx)** with layout and embedded images
 - [x] Interactive outline → transcript drill‑down
+- [x] Per‑recording refresh + stale‑while‑revalidate + clear‑cache
 - [x] **One‑way incremental Notion sync** (database or page, auto column mapping)
+- [x] Push **full note content + images** to Notion (persistent file uploads)
 - [ ] Prebuilt signed `.dmg` on the Releases page
 - [ ] Cache raw transcription & outline (currently re‑fetched per open)
 - [ ] Built‑in audio player synced to transcript timestamps

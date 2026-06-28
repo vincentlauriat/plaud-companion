@@ -10,7 +10,15 @@ actor NotionSyncService {
 
     struct Item {
         let recording: Recording
-        let notes: [NoteSection]
+        let notes: [ResolvedNote]
+    }
+
+    /// Une note prête pour la sync : son Markdown brut (chemins d'images
+    /// relatifs, donc stable pour le hash) + la résolution chemin → URL S3.
+    struct ResolvedNote {
+        let title: String
+        let markdown: String
+        let imageMap: [String: String]
     }
 
     /// Synchronise une liste d'enregistrements. `progress` est appelé après
@@ -58,12 +66,12 @@ actor NotionSyncService {
                     if existing.contentHash == hash {
                         report.skipped += 1
                     } else {
+                        let blocks = await buildBlocks(body: body, item: item, token: token)
                         try await NotionAPI.shared.updateProperties(
                             pageID: existing.notionPageID, token: token, properties: properties
                         )
                         try await NotionAPI.shared.replaceContent(
-                            pageID: existing.notionPageID, token: token,
-                            blocks: MarkdownToNotion.blocks(from: body)
+                            pageID: existing.notionPageID, token: token, blocks: blocks
                         )
                         await NotionSyncStore.shared.upsert(SyncRecord(
                             recordingID: item.recording.id, notionPageID: existing.notionPageID,
@@ -72,10 +80,11 @@ actor NotionSyncService {
                         report.updated += 1
                     }
                 } else {
+                    let blocks = await buildBlocks(body: body, item: item, token: token)
                     let pageID = try await NotionAPI.shared.createPage(
                         parentID: parentID, token: token,
                         target: target, properties: properties,
-                        blocks: MarkdownToNotion.blocks(from: body)
+                        blocks: blocks
                     )
                     await NotionSyncStore.shared.upsert(SyncRecord(
                         recordingID: item.recording.id, notionPageID: pageID,
@@ -146,6 +155,7 @@ actor NotionSyncService {
     }
 
     /// Assemble le corps Markdown : ligne de métadonnées + chaque section de notes.
+    /// Les images restent en chemins relatifs (stables) → hash reproductible.
     private func buildMarkdown(for item: Item) -> String {
         var parts: [String] = []
         let meta = [item.recording.dateFormatted, item.recording.durationFormatted]
@@ -154,11 +164,53 @@ actor NotionSyncService {
         if !meta.isEmpty { parts.append("> \(meta)") }
 
         for note in item.notes {
-            let title = note.displayTitle
-            if !title.isEmpty { parts.append("## \(title)") }
-            if let content = note.dataContent, !content.isEmpty { parts.append(content) }
+            if !note.title.isEmpty { parts.append("## \(note.title)") }
+            if !note.markdown.isEmpty { parts.append(note.markdown) }
         }
         return parts.joined(separator: "\n\n")
+    }
+
+    /// Convertit le corps en blocs Notion en téléversant d'abord les images
+    /// référencées (chemin relatif → URL S3 → fichier Notion persistant).
+    private func buildBlocks(body: String, item: Item, token: String) async -> [[String: Any]] {
+        // Agrège toutes les résolutions chemin → URL S3 de l'enregistrement.
+        var imageMap: [String: String] = [:]
+        for note in item.notes {
+            for (path, url) in note.imageMap { imageMap[path] = url }
+        }
+
+        var uploads: [String: String] = [:]   // chemin → file_upload id
+        var byURL: [String: String] = [:]      // URL S3 → file_upload id (dédoublonnage)
+        for path in MarkdownToNotion.imagePaths(in: body) where imageMap[path] != nil {
+            let s3 = imageMap[path]!
+            if let cached = byURL[s3] { uploads[path] = cached; continue }
+            if let id = try? await uploadImage(s3url: s3, token: token) {
+                uploads[path] = id
+                byURL[s3] = id
+            }
+        }
+        return MarkdownToNotion.blocks(from: body, imageUploads: uploads)
+    }
+
+    /// Télécharge une image depuis S3 et la téléverse vers Notion.
+    private func uploadImage(s3url: String, token: String) async throws -> String {
+        guard let url = URL(string: s3url) else { throw URLError(.badURL) }
+        let (data, _) = try await URLSession.shared.data(from: url)
+        let name = url.lastPathComponent.isEmpty ? "image.jpg" : url.lastPathComponent
+        return try await NotionAPI.shared.uploadFile(
+            data: data, filename: name, contentType: contentType(for: url), token: token
+        )
+    }
+
+    private func contentType(for url: URL) -> String {
+        switch url.pathExtension.lowercased() {
+        case "png":          return "image/png"
+        case "gif":          return "image/gif"
+        case "webp":         return "image/webp"
+        case "heic":         return "image/heic"
+        case "jpg", "jpeg":  return "image/jpeg"
+        default:             return "image/jpeg"
+        }
     }
 
     private func sha256(_ string: String) -> String {

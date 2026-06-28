@@ -1,5 +1,236 @@
 # CHANGES
 
+## 2026-06-28 (suite 5) — Sélecteur de note compact (ne mange plus l'écran)
+
+### Changed
+- `NotesView` : le sélecteur de note (ex-`Picker`) devient un `Menu` dont le libellé replié est
+  **tronqué sur une ligne** (chevron ⌄), au lieu d'afficher le titre complet qui s'enroulait
+  verticalement et occupait une large part de l'écran sur iPhone. Le menu déroulé montre chaque
+  titre **en entier**, avec une coche sur la note sélectionnée.
+
+### Verified
+- Builds verts macOS + device signé ; réinstallé sur iPhone.
+
+## 2026-06-28 (suite 4) — Tri chronologique de la liste (plus anciennes en haut)
+
+### Changed
+- `RecordingsViewModel.grouped` : tri croissant par date dans chaque groupe (dates absentes = très
+  anciennes) et ordre des groupes inversé → **Plus tôt → Cette semaine → Aujourd'hui**. Les réunions
+  les plus anciennes apparaissent désormais en haut de la liste.
+
+### Verified
+- Builds verts macOS + device signé ; réinstallé sur iPhone.
+
+## 2026-06-28 (suite 3) — Login OAuth natif abandonné, retour au paste/fichier
+
+### Removed
+- Service `PlaudOAuth`, bouton « Se connecter à Plaud », `TokenStore.store`, clés i18n OAuth
+  (`login_plaud`, `not_connected`, `login_failed`, `token_paste_advanced`).
+
+### Decisions
+- **Abandon du login OAuth natif.** Plaud impose un `redirect_uri` loopback
+  (`http://localhost:<port>/auth/callback`, cf. client public MCP `client_9c501dad-…`) ; pas de schéma
+  custom mobile configurable (aucune UI portail), pas de DCR public. Login loopback OK sur macOS mais
+  serveur local requis sur iOS → trop lourd pour le besoin. Auth reste : **macOS lit `~/.plaud`,
+  iOS colle le token** (`SettingsView` → « Authentification Plaud »).
+- Conservé : déclaration des schemes dans `project.yml` (fix indépendant, évite leur perte à la régénération).
+
+### Verified
+- Builds verts iOS Simulateur + macOS + device signé après retrait du code OAuth ; réinstallé sur iPhone.
+
+## 2026-06-28 (suite 2) — Login natif Plaud (OAuth 2.0 + PKCE)
+
+### Added
+- **`PlaudOAuth`** : login natif via OAuth 2.0 authorization-code + PKCE (S256), avec
+  `ASWebAuthenticationSession` (macOS + iOS). Ouvre `web.plaud.ai/platform/oauth`, échange le code
+  contre un `TokenSet` sur `…/oauth/third-party/access-token`, persiste via `TokenStore`.
+- **Bouton « Se connecter à Plaud »** dans les Réglages (cross-platform). Sur iOS, le collage manuel
+  du token devient un repli (DisclosureGroup « avancé »). Clés i18n fr/en/zh.
+- `TokenStore.store(_:)` pour persister le token issu du login.
+- Schemes `Plaud`/`PlaudiOS` déclarés dans `project.yml` (sinon perdus à chaque régénération xcodegen).
+
+### Decisions
+- L'auth de Companion repose sur l'**API tier-party reader** (`platform.plaud.ai/developer/api/open/third-party`),
+  distincte du **SDK device/partner** (`platform-us.plaud.ai/open/partner/*`, repo `plaud-sdk-public`).
+  On n'aligne donc pas sur le SDK : on réplique le flux OAuth du CLI MCP nativement.
+- Config OAuth : `client_id = client_8d941f40-…`, `redirect_uri = plaudcompanion://oauth/callback`
+  (à enregistrer dans le Developer Portal). PKCE S256, refresh déjà géré par `TokenStore`.
+
+### Verified
+- Build vert macOS + iOS Simulateur ; build device signé (`KFLACS69T9`) installé sur iPhone 16 Pro.
+
+### À tester
+- Flux de login bout-en-bout sur device (prérequis : redirect enregistré côté portail).
+
+## 2026-06-28 (suite) — Portage iOS implémenté (Phase 8.0–8.3), build vert
+
+### Added
+- **Cible iOS/iPadOS `PlaudiOS`** ajoutée à `project.yml` (xcodegen) — codebase 100 % partagé
+  avec la cible macOS, `IPHONEOS_DEPLOYMENT_TARGET = 17.0`, `TARGETED_DEVICE_FAMILY = 1,2`,
+  Info.plist iOS généré (`PlaudApp/Info-iOS.plist`). Schemes `Plaud` (macOS) + `PlaudiOS` (iOS).
+- **Réglages sur iOS** : bouton ⚙️ dans la toolbar de `ContentView` ouvrant `SettingsView` en
+  feuille (`NavigationStack` + bouton OK) — remplace la scène `Settings` macOS, absente sur iOS.
+- **Partage iOS** (`ShareSheet`) : `UIActivityViewController` pour exporter `.docx` et images
+  (avec ancrage popover iPad), en remplacement des `NSSavePanel`/`NSOpenPanel` macOS.
+- **Icône iOS** : entrée `universal/ios` 1024×1024 dans l'AppIcon set (réutilise `icon_1024.png`) ;
+  iOS/iPad icons générées au build.
+
+### Changed
+- `MarkdownWebView` : conformité scindée en extensions conditionnelles
+  (`NSViewRepresentable` macOS / `UIViewRepresentable` iOS) ; moteur Markdown→HTML partagé.
+  Sur iOS, fond transparent via `isOpaque/backgroundColor/scrollView` (pas de `drawsBackground`).
+- `PlaudApp.swift` : modifiers de scène macOS-only (`windowStyle`, `windowToolbarStyle`,
+  `defaultSize`, `commands`, scène `Settings`) isolés en `#if os(macOS)`.
+- `DocxExporter` : dimensions d'image lues via **ImageIO** (`CGImageSource`) au lieu de
+  `NSBitmapImageRep` → désormais partagé, supprime une dépendance AppKit du chemin commun.
+- `TokenStore` : chemin du token conditionnel — `~/.plaud/tokens-mcp.json` (macOS, écrit par le
+  CLI MCP) vs `Application Support/Plaud/tokens-mcp.json` (iOS, conteneur de l'app).
+- `SettingsView` : `.frame(width:height:)` fixe isolé en `#if os(macOS)`.
+
+### Verified
+- `xcodebuild` **vert sur les deux cibles** : macOS (`Plaud`) et iOS Simulateur (`PlaudiOS`,
+  binaire universel x86_64+arm64). Non-régression macOS confirmée.
+
+### Added (suite — provisioning du token iOS)
+- **Champ de collage du token dans les Réglages iOS** : section « Authentification Plaud »
+  (iOS uniquement) où l'utilisateur colle le contenu de `tokens-mcp.json` (copié depuis son Mac).
+  Statut token présent/absent affiché. Rend l'app iOS authentifiable sur device.
+- `TokenStore` : ajout de `hasToken()` et `importToken(json:)` (valide le JSON puis écrit dans le
+  conteneur de l'app). Clés de localisation fr/en/zh (`settings_token`, `token_present`, etc.).
+- Build re-vérifié vert sur les deux cibles après ajout.
+
+### Changed (8.4 — finitions + run simulateur)
+- `PlaudError.tokenMissing` : message **platform-aware** — sur iOS « Colle ton token dans les
+  Réglages (⚙️) » au lieu de la référence à Claude Code (macOS).
+- `ContentView` : à la fermeture de la feuille Réglages (iOS), rechargement automatique de la liste
+  (`onDismiss → vm.loadRecordings()`), pour refléter le token fraîchement collé.
+- **Run vérifié sur simulateur iPhone 17 Pro** : l'app se lance, layout `NavigationSplitView`
+  effondré correct, bouton ⚙️ présent, barre de recherche, message d'erreur token correct.
+
+### À faire (reste)
+- Smoke test complet avec un vrai token : coller → liste → note → export → sync Notion.
+- Icône iOS sur l'écran d'accueil : placeholder observé sur simulateur (PNG bien générés dans le
+  bundle → vraisemblablement cache simulateur) — **à confirmer sur device**.
+- Passe finitions iPad / cibles tactiles / Dynamic Type sur device réel.
+
+## 2026-06-28 — Plan de portage iOS (analyse de faisabilité)
+
+### Docs
+- **`PLAN.md`** : ajout de la **Phase 8 — Portage iOS / iPadOS** (proposée). Audit de portabilité
+  (~95 % du code déjà portable : réseau, modèles, Keychain, cache, `NavigationSplitView`), 3 fichiers
+  macOS-spécifiques à adapter (`PlaudApp.swift`, `MarkdownWebView.swift`, `NotesView.swift`),
+  découpage en sous-phases 8.0→8.5, estimation ~2–4 j, questions ouvertes et hors-périmètre.
+
+### Decisions
+- **Alignement Plaud confirmé** : l'app consomme déjà l'API REST officielle
+  `platform.plaud.ai/developer/api/open/third-party` (Bearer). Le **Plaud Embedded Starter SDK**
+  (capture matériel) est hors périmètre — sa contrainte « arm64-only / pas de simulateur / device
+  physique » ne s'applique donc pas à Companion (reader cloud + sync Notion).
+- **Cible iOS 17** retenue (SwiftUI moderne : `@Observable`, `NavigationSplitView`, `ContentUnavailableView`).
+- **À acter avant publication App Store** : valider l'obtention du Bearer token vs conditions dev Plaud
+  (le kit officiel recommande un JWT minté côté backend, Secret Key jamais embarquée).
+
+## 2026-06-25 — Fix : décodage des notes abîmées (JSON imbriqué)
+
+### Fixed
+- **Notes affichées cassées dans l'app** (accents visibles comme `é`, sauts de ligne comme `\\n`). Cause : l'API Plaud retourne `data_content` comme une **chaîne JSON échappée** (ex. `"{\"ai_content\": \"...\"}"`), que Swift décodait comme une simple string sans parser le JSON imbriqué. Résultat : la chaîne brute avec tous les échappements restait visible.
+- Solution : ajout d'un décodeur personnalisé `init(from:)` dans `NoteSection` qui détecte et parse le JSON imbriqué, extrait le champ `ai_content`, et l'utilise au lieu de la chaîne brute. Les notes dont `data_content` est du JSON valide sont désormais correctement décodées.
+
+### Changed
+- `NoteSection` : ajout de `init(from:)` et `encode(to:)` personnalisés pour gérer le décodage imbriqué de `data_content`.
+
+### Validation
+- Test unitaire (script Swift) : décodage d'une note test avec accents (`café`, `élève`) et sauts de ligne — tous les caractères spéciaux sont maintenant décodés correctement ✅. Build ✅.
+
+## 2026-06-24 (suite 3) — Export d'une note en Word (.docx)
+
+### Added
+- **Export Word** : bouton « Exporter en Word » dans l'onglet Notes (à côté de « Enregistrer les images »). Génère un vrai `.docx` de la note affichée, avec **mise en page** (titres, listes, cases à cocher, gras/italique/barré/code, tableaux, citations) et **images embarquées**.
+- `DocxExporter` (dans `NotesView.swift`) : génération **Office Open XML à la main** — convertisseur Markdown → corps `document.xml`, téléchargement + intégration des images dans `word/media`, et un mini **écrivain ZIP** maison (`DocxZip` + `DocxCRC32`, méthode « stored »). Aucune dépendance externe.
+- Clés de localisation fr/en/zh : `export_word`, `export_word_help`.
+
+### Decisions
+- **Pourquoi générer le `.docx` à la main** : les API natives `NSAttributedString` (`.officeOpenXML`) **n'embarquent pas les images** dans un `.docx` (seul `.rtfd`, un bundle, le fait — vérifié). La génération OOXML directe est la seule voie native pour un Word autonome avec images.
+- Images redimensionnées (largeur max ~600 px) ; conversion px → EMU (×9525).
+
+### Validation
+- Pipeline validé hors app : `document.xml` **bien formé** (xmllint), image présente dans `word/media`, document **relu par `textutil`** (titres, cases à cocher, listes, tableau, échappement XML `&`/`<`). Build ✅.
+
+## 2026-06-24 (suite 2) — Rendu Markdown des notes plus complet
+
+### Fixed
+- **Éléments Markdown non interprétés dans les notes.** Analyse du contenu réel : `#### ` (titres niv. 4, 43×) affichés en texte brut, et surtout **cases à cocher `- [ ]` / `- [x]` (1079×)** rendues `[ ]` littéral. Corrigé dans `MarkdownWebView.convert`.
+- **`---` parasite.** Une ligne séparatrice `---` était captée par la règle « `--` détail » (affichait un `-` isolé) ; HR remis en priorité et restreint aux lignes de tirets/étoiles/underscores.
+- **Listes éclatées.** Bug préexistant de `openList` : chaque item était enfermé dans son propre `<ul>`. Les items de même niveau sont désormais regroupés et l'imbrication est correcte.
+
+### Added (rendu `MarkdownWebView.convert`)
+- Titres **niveau 1 à 6** (`#`…`######`) ; **cases à cocher** ☐/☑ stylées ; **liens** `[texte](url)` + **URLs nues** (autolink, URLs protégées de l'emphase) ; **barré** `~~…~~` ; **blocs de code** ```` ``` ```` ; **tableaux** GFM `| … |`.
+- CSS associé : h4-h6, `li.task`, `<a>`, `<del>`, `<pre>/<code>`, `<table>`.
+
+### Changed (cohérence sync Notion)
+- `MarkdownToNotion` : `#### `+ → `heading_3` (plafond Notion) ; cases à cocher → blocs **`to_do`** natifs (avec état coché). → Notion reçoit des vraies cases à cocher au lieu de `[ ]` en texte.
+
+### Validation
+- `convert()` (fonction pure) extraite et **testée hors app** sur des cas réels (titres, cases, tableau, liens, code, barré, imbrication) — rendu HTML vérifié. Build ✅.
+
+## 2026-06-24 (suite) — Sync Notion : contenu complet des notes + images persistantes
+
+### Fixed
+- **Sync Notion incomplète.** `buildMarkdown` n'utilisait que `dataContent`, donc les notes `consumer_note` / `high_light` (contenu sur S3) partaient **vides** vers Notion (titre seul). Désormais leur contenu est téléchargé et poussé en entier.
+- **Images absentes/cassées dans Notion.** `MarkdownToNotion` ne gérait pas les images ; les chemins relatifs partaient en texte brut. Désormais les images sont **téléversées dans Notion** (persistantes) et insérées comme blocs image.
+
+### Added
+- `NotionAPI.uploadFile(data:filename:contentType:token:)` — flux *file upload* Notion en 2 temps (`POST /file_uploads` puis envoi `multipart/form-data`). Validé avec `Notion-Version 2022-06-28`.
+- `MarkdownToNotion.blocks(from:imageUploads:)` + `imagePaths(in:)` — produit des blocs image `file_upload` ; les images sans upload sont retirées (pas de texte cassé).
+- `NotionSyncService.ResolvedNote` (titre + markdown brut + map chemin→URL S3) ; `buildBlocks(body:item:token:)` téléverse à la demande les images **référencées** (dédoublonnage par URL), `uploadImage(s3url:token:)`, `contentType(for:)`.
+- `RecordingsViewModel.rawNoteMarkdown(_:)` — markdown brut d'une note (inline ou S3) pour la sync.
+
+### Changed
+- `NotionSyncService.Item.notes` : `[NoteSection]` → `[ResolvedNote]`.
+- `syncToNotion` re-fetch un **détail frais** par enregistrement (liens S3 valides), repli sur cache si réseau KO ; assemble les `ResolvedNote`.
+- **Hash de sync stable** : calculé sur le markdown **brut** (chemins relatifs), pas sur les URLs S3 volatiles → pas de re-sync en boucle ; les images ne sont téléversées que lors d'un create/update réel (jamais sur un `skipped`).
+
+### Notes techniques
+- Première sync après cette mise à jour : les pages ayant des notes distantes seront **mises à jour une fois** (le hash inclut maintenant leur contenu).
+- Coût : la sync fait désormais un appel `getFile` par enregistrement (liens frais) + un upload par image lors des create/update.
+
+## 2026-06-24 — Notes multiples + images des notes
+
+### Fixed
+- **Une seule note affichée par enregistrement.** `NotesView` ne gardait que les sections `auto_sum_note` ; les notes `consumer_note` (notes par template) et `high_light` (« Points à retenir ») étaient téléchargées mais jamais affichées. L'app montre désormais **toutes** les notes du `note_list`.
+- **Images des notes en lien cassé.** `MarkdownWebView.convert` ne gérait pas la syntaxe image Markdown `![alt](url)`, et les images Plaud sont référencées par **chemin relatif** (`permanent/…/mark/xxx.jpg`). Résultat : aucune image ne s'affichait.
+
+### Added
+- **Sélecteur de notes** (menu déroulant) dans l'onglet « Notes IA » quand un enregistrement a plusieurs notes (Résumé, Points à retenir, et chaque note par titre).
+- **Rendu des images** dans les notes : résolution des chemins relatifs via le nouveau champ `NoteSection.downloadLinkMap` (chemin → URL S3 pré-signée), support `<img>` dans `MarkdownWebView.convert` (avec protection des URLs contre les règles d'emphase) + CSS image (coins arrondis, ombre, responsive).
+- **Téléchargement des images** d'une note vers le disque (`ImageExporter`) : `NSSavePanel` pour une image, `NSOpenPanel` (choix de dossier) pour plusieurs.
+- `PlaudAPI.fetchNoteMarkdown(from:)` — télécharge le Markdown d'une note depuis `data_link` (S3) pour les notes dont `data_content` est vide (`consumer_note`/`high_light`).
+- `RecordingsViewModel.loadNoteContent(_:)` + cache mémoire `noteContents` (par `data_id`) ; contenu résolu (images incluses), inline ou distant.
+- Clés de localisation fr/en/zh : `note_summary`, `note_highlights`, `note_generic`, `save_image`, `save_images`, `save_images_help`.
+
+### Changed
+- `NotesView` prend désormais le `RecordingsViewModel` (au lieu d'un `[NoteSection]`) pour gérer le chargement à la demande du contenu distant et le cache.
+- `NoteSection` : nouveaux champs/aides `downloadLinkMap`, `contentIsRemote`, `resolvingImages(in:)`, `imageURLs`.
+
+### Notes techniques
+- Les URLs S3 (contenu distant + images) sont **pré-signées et expirent** ; elles ne sont pas mises en cache sur disque. Le stale-while-revalidate de `selectRecording` (fix du 06-23) garantit des liens frais à chaque ouverture.
+
+## 2026-06-23 — Rafraîchissement des données d'un enregistrement (fix cache speakers)
+
+### Fixed
+- **Les noms d'interlocuteurs (et notes) modifiés côté Plaud ne se mettaient jamais à jour dans l'app.** Cause : `selectRecording` retournait le cache `notes/{id}.json` sans jamais revalider, et `loadTranscript()` était bloqué par son guard `transcriptSegments.isEmpty` tant qu'on restait sur la même réunion → `transcriptSegments` (source des onglets Transcription & Interlocuteurs) jamais re-fetché.
+
+### Added
+- `PlaudCache.clearNotes(id:)` — invalide le cache d'un seul enregistrement.
+- `RecordingsViewModel.refreshCurrentRecording()` — force le re-téléchargement de l'enregistrement sélectionné (notes + transcription + plan) en ignorant le cache, puis réécrit le cache.
+- Bouton **rafraîchir** (icône `arrow.clockwise`) dans l'en-tête du détail d'un enregistrement (`RecordingDetailView`).
+- Section **Cache local** dans les Réglages avec bouton **Vider le cache** (branche le `PlaudCache.clearAll()` déjà existant, jusqu'ici non exposé en UI).
+- Clés de localisation fr/en/zh : `refresh_recording_help`, `settings_cache`, `cache_clear`, `cache_clear_help`, `cache_cleared`.
+
+### Changed
+- `selectRecording` passe en **stale-while-revalidate** : affiche le cache instantanément (si présent), puis revalide depuis le serveur en arrière-plan et remplit d'emblée `transcriptSegments` / `outlineSegments` (l'onglet Interlocuteurs est donc à jour sans second appel API). La réponse est ignorée si l'utilisateur a changé de sélection entre-temps.
+- Helper privé `fetchDetail(for:)` factorise la logique de fetch + cache partagée par `selectRecording` et `refreshCurrentRecording`.
+
 ## 2026-06-21 (suite 11) — Pipeline DMG + notarisation
 
 ### Added

@@ -3,8 +3,27 @@ options:
   bundleIdPrefix: fr.vincentlauriat
   deploymentTarget:
     macOS: "14.0"
+    iOS: "17.0"
+
+# Schemes explicites (sinon xcodegen n'en génère pas → schemes perdus à chaque régénération).
+schemes:
+  Plaud:
+    build:
+      targets:
+        Plaud: all
+    run:
+      config: Debug
+  PlaudiOS:
+    build:
+      targets:
+        PlaudiOS: all
+    run:
+      config: Debug
 
 targets:
+  # ---------------------------------------------------------------------------
+  # macOS — Plaud Companion (cible historique)
+  # ---------------------------------------------------------------------------
   Plaud:
     type: application
     platform: macOS
@@ -13,6 +32,8 @@ targets:
       - path: PlaudApp
         excludes:
           - "**/*.entitlements"
+          - "Info.plist"
+          - "Info-iOS.plist"
     settings:
       base:
         PRODUCT_NAME: Plaud Companion
@@ -36,3 +57,48 @@ targets:
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         LSMinimumSystemVersion: "14.0"
         NSHumanReadableCopyright: ""
+
+  # ---------------------------------------------------------------------------
+  # iOS / iPadOS — Plaud Companion (codebase partagé avec la cible macOS)
+  # ---------------------------------------------------------------------------
+  PlaudiOS:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: PlaudApp
+        excludes:
+          - "**/*.entitlements"
+          - "Info.plist"
+          - "Info-iOS.plist"
+    settings:
+      base:
+        PRODUCT_NAME: Plaud Companion
+        PRODUCT_BUNDLE_IDENTIFIER: fr.vincentlauriat.Plaud
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        SWIFT_VERSION: "5.9"
+        MARKETING_VERSION: "1.0.0"
+        CURRENT_PROJECT_VERSION: "1"
+        IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        # Signature automatique gérée dans Xcode (Apple ID perso).
+        # Le build de vérification simulateur passe CODE_SIGNING_ALLOWED=NO en argument.
+        CODE_SIGN_STYLE: Automatic
+    info:
+      path: PlaudApp/Info-iOS.plist
+      properties:
+        CFBundleName: Plaud Companion
+        CFBundleDisplayName: Plaud Companion
+        CFBundleIdentifier: fr.vincentlauriat.Plaud
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight

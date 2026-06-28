@@ -112,6 +112,57 @@ actor NotionAPI {
         return id
     }
 
+    // MARK: - File uploads (images)
+
+    /// Téléverse un fichier vers Notion et retourne l'identifiant `file_upload`
+    /// réutilisable dans un bloc image. Flux en deux temps : création de l'objet
+    /// puis envoi du contenu en multipart. Limite Notion : 20 Mo en une partie.
+    func uploadFile(data: Data, filename: String, contentType: String, token: String) async throws -> String {
+        let created = try await request(
+            "POST", path: "/file_uploads", token: token,
+            body: ["filename": filename, "content_type": contentType]
+        )
+        guard let id = created["id"] as? String else {
+            throw NotionError.httpError(0, "Réponse file_upload sans id")
+        }
+        let sendURL = (created["upload_url"] as? String)
+            ?? (NotionConfig.base + "/file_uploads/\(id)/send")
+        try await sendMultipart(
+            urlString: sendURL, fileData: data,
+            filename: filename, contentType: contentType, token: token
+        )
+        return id
+    }
+
+    private func sendMultipart(
+        urlString: String, fileData: Data,
+        filename: String, contentType: String, token: String
+    ) async throws {
+        guard let url = URL(string: urlString) else { throw URLError(.badURL) }
+        let boundary = "Boundary-\(UUID().uuidString)"
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        req.setValue(NotionConfig.apiVersion, forHTTPHeaderField: "Notion-Version")
+        req.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+
+        var body = Data()
+        func append(_ s: String) { body.append(Data(s.utf8)) }
+        append("--\(boundary)\r\n")
+        append("Content-Disposition: form-data; name=\"file\"; filename=\"\(filename)\"\r\n")
+        append("Content-Type: \(contentType)\r\n\r\n")
+        body.append(fileData)
+        append("\r\n--\(boundary)--\r\n")
+        req.httpBody = body
+
+        let (respData, resp) = try await URLSession.shared.data(for: req)
+        let code = (resp as? HTTPURLResponse)?.statusCode ?? 0
+        guard (200..<300).contains(code) else {
+            let msg = (try? JSONSerialization.jsonObject(with: respData) as? [String: Any])?["message"] as? String
+            throw NotionError.httpError(code, msg)
+        }
+    }
+
     /// Met à jour les propriétés (titre + colonnes mappées) d'une page existante.
     func updateProperties(pageID: String, token: String, properties: [String: Any]) async throws {
         let body: [String: Any] = ["properties": properties]

@@ -32,7 +32,11 @@ Source de vérité technique du projet Plaud.
 ## Modèle de données (API)
 
 `GET /files/{id}` → `RecordingDetail` :
-- `note_list[]` : `auto_sum_note`, `auto_sum_brief` (Markdown dans `data_content`).
+- `note_list[]` — plusieurs notes par enregistrement, types observés :
+  - `auto_sum_note` / `auto_sum_brief` → résumé IA, Markdown **inline** dans `data_content`.
+  - `consumer_note` → note par template (détaillée) : `data_content` **vide**, contenu Markdown dans `data_link` (URL S3 pré-signée).
+  - `high_light` → « Points à retenir » : idem, contenu dans `data_link` (S3).
+  - `download_link_map` (par note) : `{ chemin_relatif → URL S3 }` qui résout les images `![..](permanent/.../mark/xxx.jpg)` du Markdown vers des URLs téléchargeables.
 - `source_list[]` — 3 types :
   - `transaction` → transcription **brute** : JSON `[{start_time, end_time, content, speaker}]` dans `data_content`.
   - `outline` → **plan** : JSON `[{start_time, end_time, topic}]` dans `data_content`.
@@ -49,15 +53,24 @@ Source de vérité technique du projet Plaud.
 
 - Répertoire : `~/Library/Application Support/Plaud/`
 - `recordings.json` — liste complète (recréée au refresh).
-- `notes/<id>.json` — `note_list` par enregistrement (mis en cache au 1er affichage).
-- Transcriptions non mises en cache (volumineuses ; la polie expire en 300 s).
+- `notes/<id>.json` — `note_list` par enregistrement.
+- **Stale-while-revalidate** : `selectRecording` affiche le cache puis revalide en arrière-plan (les noms de speakers / notes modifiés côté Plaud se mettent à jour). `clearNotes(id:)` invalide un enregistrement ; `refreshCurrentRecording()` force le re-fetch ; `clearAll()` exposé via Réglages → « Vider le cache ».
+- Contenus volatils **non cachés sur disque** (URLs S3 pré-signées qui expirent) : transcription polie, contenu distant des notes (`data_link`), images. Le contenu Markdown résolu des notes est mis en cache **mémoire** (`RecordingsViewModel.noteContents`, par `data_id`).
 
 ## UI — onglets de détail
 
-1. **Résumé** — première note IA (rendu WebView).
-2. **Notes IA** — toutes les sections de notes.
+1. **Résumé** — note `auto_sum_note` (rendu WebView, images incluses).
+2. **Notes IA** — **sélecteur déroulant** de toutes les notes (`auto_sum_note`, `consumer_note`, `high_light`). Contenu inline ou téléchargé depuis `data_link` à la demande (`loadNoteContent`). Images résolues via `download_link_map` ; bouton **« Enregistrer les images »** (`ImageExporter` → `NSSavePanel`/`NSOpenPanel`) ; bouton **« Exporter en Word »** (`DocxExporter`).
+
+## Export Word (`DocxExporter`, dans `NotesView.swift`)
+
+Génère un véritable `.docx` (Office Open XML) **à la main**, car les API `NSAttributedString` (`.officeOpenXML`) n'embarquent pas les images (seul `.rtfd`, un bundle, le fait). Pipeline : Markdown → corps `word/document.xml` (titres, listes, cases à cocher, gras/italique/barré/code, tableaux, citations), téléchargement + intégration des images dans `word/media` (résolution px→EMU ×9525, largeur cap ~600 px, relations `r:embed`), puis empaquetage via un mini écrivain ZIP maison (`DocxZip` + `DocxCRC32`, méthode « stored », sans dépendance). Validé hors app (xmllint + `textutil`).
 3. **Transcription** — sous-onglets : Brute · Polie · Plan.
 4. **Interlocuteurs** — stats de temps de parole par locuteur (depuis `transaction`).
+
+## Rendu Markdown (`MarkdownWebView.convert`)
+
+Markdown → HTML (WKWebView, style Apple light/dark). Gère : titres `#`…`######`, listes `-`/`*`/`1.` (regroupées + imbriquées), **cases à cocher** `- [ ]`/`- [x]` (☐/☑), citations `>`, lignes détail Plaud `--`, séparateurs, **liens** `[..](..)` + URLs nues, **barré** `~~..~~`, gras/italique, **code inline + blocs** ```` ``` ````, **tableaux** GFM, et **images** `![..](..)` (chemins résolus en amont via `download_link_map`). Les URLs sont protégées par des jetons avant l'emphase pour ne pas être cassées.
 
 ## Synchro Notion (Plaud → Notion, unidirectionnelle)
 
@@ -76,9 +89,12 @@ NotionSyncService ──┬─ état: notion-sync.json (recordingID → {pageID,
 - **Cible** : `resolveTarget(id:)` détecte si l'ID est une **database** (entrées dans la table) ou une **page** (sous-pages enfants). Fallback : `GET /databases/{id}` → si 400/404, on tente `GET /pages/{id}`.
 - **Create** : `POST /pages`, parent = `database_id` (database) ou `page_id` (page) ; titre dans la propriété de type `title` (nom découvert pour une database, `title` pour une page) ; corps = blocs Markdown.
 - **Update** : `PATCH /pages/{id}` (titre) + `replaceContent` = archive des blocs enfants (`DELETE /blocks/{id}`) puis ré-append (`PATCH /blocks/{id}/children`, paquets de 100). URL conservée.
-- **Mapping** : titre toujours rempli ; résumé/notes vont dans le corps. Si la cible est une **database**, `resolveTarget` lit le schéma (`NotionTarget.properties`) et `notionProperties` remplit aussi, défensivement : colonne **Date** → date de l'enregistrement, **Number** « durée/duration/length » → minutes, **texte** « …plaud… » → identifiant Plaud. Colonnes absentes ignorées → reste compatible avec tout schéma. La signature des colonnes mappables entre dans le hash (ajout d'une colonne ⇒ re-remplissage des pages existantes).
+- **Contenu poussé** : titre + ligne de métadonnées + **toutes les notes** (résumé, points à retenir, notes par template). Le contenu distant (`consumer_note`/`high_light`) est téléchargé depuis `data_link` au moment de la sync (`RecordingsViewModel.rawNoteMarkdown` → `NotionSyncService.ResolvedNote`). La sync re-fetch un **détail frais** par enregistrement (liens S3 valides), repli sur cache si réseau KO.
+- **Images** : `NotionSyncService.buildBlocks` téléverse les images **référencées** dans le corps (chemin → URL S3 via `download_link_map` → `NotionAPI.uploadFile`), dédoublonnage par URL, puis `MarkdownToNotion.blocks(from:imageUploads:)` insère des blocs `image` de type `file_upload`. **File upload Notion** en 2 temps : `POST /file_uploads` (`{filename, content_type}` → `{id, upload_url}`) puis envoi `multipart/form-data` (champ `file`, ≤ 20 Mo). Images **persistantes** (pas de lien S3 qui expire).
+- **Hash stable** : le `contentHash` est calculé sur le Markdown **brut** (chemins d'images relatifs, contenu inline), **pas** sur les URLs S3 volatiles → pas de re-sync en boucle. Les images ne sont téléversées que lors d'un **create/update** réel (jamais sur un `skip`).
+- **Mapping colonnes** : titre toujours rempli. Si la cible est une **database**, `resolveTarget` lit le schéma (`NotionTarget.properties`) et `notionProperties` remplit défensivement : **Date** → date, **Number** « durée/duration/length » → minutes, **texte** « …plaud… » → identifiant Plaud. Colonnes absentes ignorées. La signature des colonnes mappables entre dans le hash.
 - **Auth** : token d'intégration en **Keychain** (`Keychain.swift`, `account: notion-token`), jamais loggé. `databaseID` + `autoSync` en `UserDefaults` via `AppSettings`.
-- **Markdown → blocs** : `MarkdownToNotion` gère headings (`#`/`##`/`###`), listes (`-`/`*`/`1.`), citations (`>`), paragraphes ; découpe rich_text à 2000 caractères.
+- **Markdown → blocs** (`MarkdownToNotion`) : headings `#`…`######` (plafonnés à `heading_3`), **cases à cocher** `- [ ]`/`- [x]` → blocs **`to_do`** natifs (état coché), listes (`-`/`*`/`1.`), citations (`>`), images (`file_upload`), paragraphes ; rich_text découpé à 2000 caractères.
 - **Pré-requis utilisateur** : créer une intégration sur notion.so/my-integrations, puis partager la database cible avec l'intégration (sinon HTTP 404).
 
 ## Release (DMG + notarisation)

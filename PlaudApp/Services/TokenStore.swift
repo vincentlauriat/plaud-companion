@@ -7,7 +7,12 @@ enum PlaudError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .tokenMissing: return "Token Plaud introuvable. Connecte-toi d'abord via Claude Code."
+        case .tokenMissing:
+            #if os(iOS)
+            return "Token Plaud introuvable. Colle ton token dans les Réglages (⚙️)."
+            #else
+            return "Token Plaud introuvable. Connecte-toi d'abord via Claude Code."
+            #endif
         case .noRefreshToken: return "Token expiré et aucun refresh token disponible. Reconnecte-toi via Claude Code."
         case .httpError(let code): return "Erreur HTTP \(code)"
         }
@@ -17,9 +22,23 @@ enum PlaudError: LocalizedError {
 actor TokenStore {
     static let shared = TokenStore()
 
-    private let tokenURL: URL = FileManager.default
-        .homeDirectoryForCurrentUser
-        .appendingPathComponent(".plaud/tokens-mcp.json")
+    // macOS : fichier partagé `~/.plaud/tokens-mcp.json` écrit par le CLI MCP Plaud.
+    // iOS : pas de home partagé → on stocke dans le conteneur de l'app
+    // (`Application Support/Plaud/tokens-mcp.json`), alimenté par l'utilisateur
+    // (collage du token dans les Réglages ou import via l'app Fichiers).
+    private let tokenURL: URL = {
+        #if os(macOS)
+        return FileManager.default
+            .homeDirectoryForCurrentUser
+            .appendingPathComponent(".plaud/tokens-mcp.json")
+        #else
+        let dir = FileManager.default
+            .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("Plaud", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir.appendingPathComponent("tokens-mcp.json")
+        #endif
+    }()
 
     private let refreshURL = URL(string:
         "https://platform.plaud.ai/developer/api/oauth/third-party/access-token/refresh")!
@@ -30,6 +49,24 @@ actor TokenStore {
             tokens = try await refresh(tokens)
         }
         return tokens.accessToken
+    }
+
+    /// `true` si un fichier de token valide est présent (décodable).
+    func hasToken() -> Bool {
+        (try? load()) != nil
+    }
+
+    /// Importe un token collé par l'utilisateur (contenu de `tokens-mcp.json`).
+    /// Surtout utile sur iOS où il n'existe pas de fichier `~/.plaud` partagé.
+    /// Lève `PlaudError.tokenMissing` si le JSON est invalide.
+    func importToken(json: String) throws {
+        let trimmed = json.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let data = trimmed.data(using: .utf8),
+              let tokens = try? JSONDecoder().decode(TokenSet.self, from: data),
+              !tokens.accessToken.isEmpty else {
+            throw PlaudError.tokenMissing
+        }
+        try save(tokens)
     }
 
     private func load() throws -> TokenSet {
