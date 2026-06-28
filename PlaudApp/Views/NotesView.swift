@@ -64,16 +64,32 @@ struct NotesView: View {
             let ready = vm.noteContents[s.dataId]?.isEmpty == false
             HStack(spacing: 10) {
                 if showPicker {
-                    Picker("", selection: Binding(
-                        get: { current?.dataId ?? "" },
-                        set: { selectedId = $0 }
-                    )) {
+                    // Menu plutôt qu'un Picker : le libellé replié est tronqué sur une
+                    // ligne (ne « mange » plus l'écran), alors que le menu déroulé
+                    // montre chaque titre en entier.
+                    Menu {
                         ForEach(available) { n in
-                            Text(label(n)).tag(n.dataId)
+                            Button {
+                                selectedId = n.dataId
+                            } label: {
+                                if n.dataId == s.dataId {
+                                    Label(label(n), systemImage: "checkmark")
+                                } else {
+                                    Text(label(n))
+                                }
+                            }
                         }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Text(label(s))
+                                .lineLimit(1)
+                                .truncationMode(.tail)
+                            Image(systemName: "chevron.up.chevron.down")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: 320, alignment: .leading)
                     }
-                    .labelsHidden()
-                    .frame(maxWidth: 380)
                 }
                 Spacer()
                 Button {

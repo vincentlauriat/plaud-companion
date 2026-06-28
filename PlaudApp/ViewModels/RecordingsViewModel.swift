@@ -48,7 +48,16 @@ final class RecordingsViewModel {
                 older.append(rec)
             }
         }
-        return [("group_today", today), ("group_week", week), ("group_earlier", older)]
+        // Tri chronologique croissant (plus anciens en premier) dans chaque groupe ;
+        // dates absentes traitées comme très anciennes.
+        let byDateAscending: (Recording, Recording) -> Bool = {
+            ($0.date ?? .distantPast) < ($1.date ?? .distantPast)
+        }
+        today.sort(by: byDateAscending)
+        week.sort(by: byDateAscending)
+        older.sort(by: byDateAscending)
+        // Groupes ordonnés du plus ancien au plus récent (les plus anciennes en haut).
+        return [("group_earlier", older), ("group_week", week), ("group_today", today)]
             .filter { !$0.recordings.isEmpty }
     }
 

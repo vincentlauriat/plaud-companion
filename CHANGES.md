@@ -1,5 +1,67 @@
 # CHANGES
 
+## 2026-06-28 (suite 5) — Sélecteur de note compact (ne mange plus l'écran)
+
+### Changed
+- `NotesView` : le sélecteur de note (ex-`Picker`) devient un `Menu` dont le libellé replié est
+  **tronqué sur une ligne** (chevron ⌄), au lieu d'afficher le titre complet qui s'enroulait
+  verticalement et occupait une large part de l'écran sur iPhone. Le menu déroulé montre chaque
+  titre **en entier**, avec une coche sur la note sélectionnée.
+
+### Verified
+- Builds verts macOS + device signé ; réinstallé sur iPhone.
+
+## 2026-06-28 (suite 4) — Tri chronologique de la liste (plus anciennes en haut)
+
+### Changed
+- `RecordingsViewModel.grouped` : tri croissant par date dans chaque groupe (dates absentes = très
+  anciennes) et ordre des groupes inversé → **Plus tôt → Cette semaine → Aujourd'hui**. Les réunions
+  les plus anciennes apparaissent désormais en haut de la liste.
+
+### Verified
+- Builds verts macOS + device signé ; réinstallé sur iPhone.
+
+## 2026-06-28 (suite 3) — Login OAuth natif abandonné, retour au paste/fichier
+
+### Removed
+- Service `PlaudOAuth`, bouton « Se connecter à Plaud », `TokenStore.store`, clés i18n OAuth
+  (`login_plaud`, `not_connected`, `login_failed`, `token_paste_advanced`).
+
+### Decisions
+- **Abandon du login OAuth natif.** Plaud impose un `redirect_uri` loopback
+  (`http://localhost:<port>/auth/callback`, cf. client public MCP `client_9c501dad-…`) ; pas de schéma
+  custom mobile configurable (aucune UI portail), pas de DCR public. Login loopback OK sur macOS mais
+  serveur local requis sur iOS → trop lourd pour le besoin. Auth reste : **macOS lit `~/.plaud`,
+  iOS colle le token** (`SettingsView` → « Authentification Plaud »).
+- Conservé : déclaration des schemes dans `project.yml` (fix indépendant, évite leur perte à la régénération).
+
+### Verified
+- Builds verts iOS Simulateur + macOS + device signé après retrait du code OAuth ; réinstallé sur iPhone.
+
+## 2026-06-28 (suite 2) — Login natif Plaud (OAuth 2.0 + PKCE)
+
+### Added
+- **`PlaudOAuth`** : login natif via OAuth 2.0 authorization-code + PKCE (S256), avec
+  `ASWebAuthenticationSession` (macOS + iOS). Ouvre `web.plaud.ai/platform/oauth`, échange le code
+  contre un `TokenSet` sur `…/oauth/third-party/access-token`, persiste via `TokenStore`.
+- **Bouton « Se connecter à Plaud »** dans les Réglages (cross-platform). Sur iOS, le collage manuel
+  du token devient un repli (DisclosureGroup « avancé »). Clés i18n fr/en/zh.
+- `TokenStore.store(_:)` pour persister le token issu du login.
+- Schemes `Plaud`/`PlaudiOS` déclarés dans `project.yml` (sinon perdus à chaque régénération xcodegen).
+
+### Decisions
+- L'auth de Companion repose sur l'**API tier-party reader** (`platform.plaud.ai/developer/api/open/third-party`),
+  distincte du **SDK device/partner** (`platform-us.plaud.ai/open/partner/*`, repo `plaud-sdk-public`).
+  On n'aligne donc pas sur le SDK : on réplique le flux OAuth du CLI MCP nativement.
+- Config OAuth : `client_id = client_8d941f40-…`, `redirect_uri = plaudcompanion://oauth/callback`
+  (à enregistrer dans le Developer Portal). PKCE S256, refresh déjà géré par `TokenStore`.
+
+### Verified
+- Build vert macOS + iOS Simulateur ; build device signé (`KFLACS69T9`) installé sur iPhone 16 Pro.
+
+### À tester
+- Flux de login bout-en-bout sur device (prérequis : redirect enregistré côté portail).
+
 ## 2026-06-28 (suite) — Portage iOS implémenté (Phase 8.0–8.3), build vert
 
 ### Added

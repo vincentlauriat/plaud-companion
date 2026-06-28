@@ -5,6 +5,21 @@ options:
     macOS: "14.0"
     iOS: "17.0"
 
+# Schemes explicites (sinon xcodegen n'en génère pas → schemes perdus à chaque régénération).
+schemes:
+  Plaud:
+    build:
+      targets:
+        Plaud: all
+    run:
+      config: Debug
+  PlaudiOS:
+    build:
+      targets:
+        PlaudiOS: all
+    run:
+      config: Debug
+
 targets:
   # ---------------------------------------------------------------------------
   # macOS — Plaud Companion (cible historique)
