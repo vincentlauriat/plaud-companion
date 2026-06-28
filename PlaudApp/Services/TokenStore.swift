@@ -7,7 +7,12 @@ enum PlaudError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .tokenMissing: return "Token Plaud introuvable. Connecte-toi d'abord via Claude Code."
+        case .tokenMissing:
+            #if os(iOS)
+            return "Token Plaud introuvable. Colle ton token dans les Réglages (⚙️)."
+            #else
+            return "Token Plaud introuvable. Connecte-toi d'abord via Claude Code."
+            #endif
         case .noRefreshToken: return "Token expiré et aucun refresh token disponible. Reconnecte-toi via Claude Code."
         case .httpError(let code): return "Erreur HTTP \(code)"
         }

@@ -44,7 +44,10 @@ struct ContentView: View {
             Text(vm.errorMessage ?? "")
         }
         #if os(iOS)
-        .sheet(isPresented: $showingSettings) {
+        // À la fermeture des Réglages (où l'on colle le token), on recharge la liste.
+        .sheet(isPresented: $showingSettings, onDismiss: {
+            Task { await vm.loadRecordings() }
+        }) {
             NavigationStack {
                 SettingsView()
                     .environment(settings)

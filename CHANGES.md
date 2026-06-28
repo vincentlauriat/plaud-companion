@@ -37,9 +37,19 @@
   conteneur de l'app). Clés de localisation fr/en/zh (`settings_token`, `token_present`, etc.).
 - Build re-vérifié vert sur les deux cibles après ajout.
 
-### À faire (smoke test)
-- Test fonctionnel sur device/simulateur : coller le token → liste → note → export → sync Notion.
-- Finitions UI iPhone/iPad (8.4).
+### Changed (8.4 — finitions + run simulateur)
+- `PlaudError.tokenMissing` : message **platform-aware** — sur iOS « Colle ton token dans les
+  Réglages (⚙️) » au lieu de la référence à Claude Code (macOS).
+- `ContentView` : à la fermeture de la feuille Réglages (iOS), rechargement automatique de la liste
+  (`onDismiss → vm.loadRecordings()`), pour refléter le token fraîchement collé.
+- **Run vérifié sur simulateur iPhone 17 Pro** : l'app se lance, layout `NavigationSplitView`
+  effondré correct, bouton ⚙️ présent, barre de recherche, message d'erreur token correct.
+
+### À faire (reste)
+- Smoke test complet avec un vrai token : coller → liste → note → export → sync Notion.
+- Icône iOS sur l'écran d'accueil : placeholder observé sur simulateur (PNG bien générés dans le
+  bundle → vraisemblablement cache simulateur) — **à confirmer sur device**.
+- Passe finitions iPad / cibles tactiles / Dynamic Type sur device réel.
 
 ## 2026-06-28 — Plan de portage iOS (analyse de faisabilité)
 
