@@ -5,11 +5,39 @@ struct SettingsView: View {
     @State private var testing = false
     @State private var testResult: String?
     @State private var cacheCleared = false
+    #if os(iOS)
+    @State private var tokenInput = ""
+    @State private var tokenPresent = false
+    @State private var tokenMessage: String?
+    #endif
 
     var body: some View {
         @Bindable var settings = settings
 
         Form {
+            #if os(iOS)
+            // Authentification : sur iOS, pas de fichier ~/.plaud partagé → l'utilisateur
+            // colle le contenu de tokens-mcp.json (copié depuis son Mac).
+            Section(settings.t("settings_token")) {
+                Text(tokenPresent ? settings.t("token_present") : settings.t("token_absent"))
+                    .font(.callout)
+                    .foregroundStyle(tokenPresent ? Color.secondary : Color.primary)
+                TextEditor(text: $tokenInput)
+                    .font(.system(.footnote, design: .monospaced))
+                    .frame(minHeight: 90)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.never)
+                Button(settings.t("token_save")) {
+                    Task { await saveToken() }
+                }
+                .disabled(tokenInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                if let tokenMessage {
+                    Text(tokenMessage).font(.caption).foregroundStyle(.secondary)
+                }
+            }
+            .task { tokenPresent = await TokenStore.shared.hasToken() }
+            #endif
+
             Section(settings.t("settings_appearance")) {
                 Picker(settings.t("settings_appearance"), selection: $settings.appearanceRaw) {
                     ForEach(AppearanceMode.allCases) { mode in
@@ -81,8 +109,23 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
+        #if os(macOS)
         .frame(width: 460, height: 520)
+        #endif
     }
+
+    #if os(iOS)
+    private func saveToken() async {
+        do {
+            try await TokenStore.shared.importToken(json: tokenInput)
+            tokenPresent = true
+            tokenInput = ""
+            tokenMessage = settings.t("token_saved")
+        } catch {
+            tokenMessage = settings.t("token_invalid")
+        }
+    }
+    #endif
 
     private func testConnection() async {
         testing = true

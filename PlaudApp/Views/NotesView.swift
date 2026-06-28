@@ -1,6 +1,11 @@
 import SwiftUI
-import AppKit
+import ImageIO
 import UniformTypeIdentifiers
+#if os(macOS)
+import AppKit
+#else
+import UIKit
+#endif
 
 struct NotesView: View {
     @Environment(AppSettings.self) private var settings
@@ -167,11 +172,14 @@ struct NotesView: View {
 // MARK: - Export d'images vers le disque
 
 enum ImageExporter {
-    /// Enregistre une ou plusieurs images sur le disque via un panneau natif.
+    /// Enregistre/partage une ou plusieurs images.
+    /// - macOS : panneau natif d'enregistrement (`NSSavePanel`/`NSOpenPanel`).
+    /// - iOS : feuille de partage (`UIActivityViewController`) après téléchargement local.
     @MainActor
     static func export(_ urls: [URL], suggestedName: String) async {
         guard !urls.isEmpty else { return }
 
+        #if os(macOS)
         if urls.count == 1 {
             let panel = NSSavePanel()
             panel.canCreateDirectories = true
@@ -189,6 +197,21 @@ enum ImageExporter {
                 await download(url, to: dest)
             }
         }
+        #else
+        // Télécharge chaque image dans un fichier temporaire nommé, puis partage.
+        let tmp = FileManager.default.temporaryDirectory
+        var files: [URL] = []
+        for (i, url) in urls.enumerated() {
+            guard let (data, _) = try? await URLSession.shared.data(from: url) else { continue }
+            let name = urls.count == 1
+                ? "\(suggestedName).\(ext(url))"
+                : "\(suggestedName)_\(i + 1).\(ext(url))"
+            let dest = tmp.appendingPathComponent(name)
+            if (try? data.write(to: dest)) != nil { files.append(dest) }
+        }
+        guard !files.isEmpty else { return }
+        ShareSheet.present(files)
+        #endif
     }
 
     private static func ext(_ url: URL) -> String {
@@ -196,6 +219,7 @@ enum ImageExporter {
         return e.isEmpty ? "jpg" : e
     }
 
+    #if os(macOS)
     private static func download(_ url: URL, to dest: URL) async {
         do {
             let (data, _) = try await URLSession.shared.data(from: url)
@@ -204,7 +228,31 @@ enum ImageExporter {
             // Échec silencieux : une image manquante ne doit pas bloquer les autres.
         }
     }
+    #endif
 }
+
+#if os(iOS)
+/// Présente une feuille de partage iOS depuis n'importe quel contexte `@MainActor`.
+enum ShareSheet {
+    @MainActor
+    static func present(_ items: [Any]) {
+        guard let scene = UIApplication.shared.connectedScenes
+                .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene,
+              let root = scene.keyWindow?.rootViewController else { return }
+        var top = root
+        while let presented = top.presentedViewController { top = presented }
+
+        let vc = UIActivityViewController(activityItems: items, applicationActivities: nil)
+        // iPad : ancre le popover au centre pour éviter un crash sans source.
+        if let pop = vc.popoverPresentationController {
+            pop.sourceView = top.view
+            pop.sourceRect = CGRect(x: top.view.bounds.midX, y: top.view.bounds.midY, width: 0, height: 0)
+            pop.permittedArrowDirections = []
+        }
+        top.present(vc, animated: true)
+    }
+}
+#endif
 
 // MARK: - Export d'une note en document Word (.docx)
 
@@ -230,12 +278,19 @@ enum DocxExporter {
         let docx = package(documentBody: body, images: images)
 
         // 4. Enregistrement.
+        #if os(macOS)
         let panel = NSSavePanel()
         panel.canCreateDirectories = true
         panel.allowedContentTypes = [UTType(filenameExtension: "docx") ?? .data]
         panel.nameFieldStringValue = "\(suggestedName).docx"
         guard panel.runModal() == .OK, let dest = panel.url else { return }
         try? docx.write(to: dest)
+        #else
+        // iOS : écrit dans un fichier temporaire puis ouvre la feuille de partage.
+        let dest = FileManager.default.temporaryDirectory.appendingPathComponent("\(suggestedName).docx")
+        guard (try? docx.write(to: dest)) != nil else { return }
+        ShareSheet.present([dest])
+        #endif
     }
 
     // MARK: Images
@@ -249,16 +304,20 @@ enum DocxExporter {
     }
 
     private static func downloadImage(_ urlString: String, index: Int) async -> DocxImage? {
+        // Dimensions lues via ImageIO (CoreGraphics) — portable macOS/iOS, sans AppKit.
         guard let url = URL(string: urlString),
               let (data, _) = try? await URLSession.shared.data(from: url),
-              let rep = NSBitmapImageRep(data: data) else { return nil }
+              let src = CGImageSourceCreateWithData(data as CFData, nil),
+              let props = CGImageSourceCopyPropertiesAtIndex(src, 0, nil) as? [CFString: Any],
+              let pixelsWide = props[kCGImagePropertyPixelWidth] as? Double,
+              let pixelsHigh = props[kCGImagePropertyPixelHeight] as? Double else { return nil }
         var ext = url.pathExtension.lowercased()
         if ext == "jpeg" { ext = "jpg" }
         if !["png", "jpg", "gif"].contains(ext) { ext = "jpg" }
         let maxW = 600.0   // largeur max en points (page A4 ≈ 6,3")
-        let scale = Double(rep.pixelsWide) > maxW ? maxW / Double(rep.pixelsWide) : 1.0
-        let cx = max(1, Int(Double(rep.pixelsWide) * scale * 9525))   // 1 px = 9525 EMU
-        let cy = max(1, Int(Double(rep.pixelsHigh) * scale * 9525))
+        let scale = pixelsWide > maxW ? maxW / pixelsWide : 1.0
+        let cx = max(1, Int(pixelsWide * scale * 9525))   // 1 px = 9525 EMU
+        let cy = max(1, Int(pixelsHigh * scale * 9525))
         return DocxImage(data: data, ext: ext, rId: "rId\(100 + index)",
                          fileName: "image\(index).\(ext)", cx: cx, cy: cy)
     }

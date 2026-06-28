@@ -4,11 +4,25 @@ struct ContentView: View {
     @Environment(AppSettings.self) private var settings
     @State private var vm = RecordingsViewModel()
     @State private var selectedId: String?
+    #if os(iOS)
+    @State private var showingSettings = false
+    #endif
 
     var body: some View {
         NavigationSplitView {
             RecordingListView(vm: vm, selectedId: $selectedId)
                 .navigationSplitViewColumnWidth(min: 240, ideal: 280, max: 360)
+                #if os(iOS)
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            showingSettings = true
+                        } label: {
+                            Image(systemName: "gearshape")
+                        }
+                    }
+                }
+                #endif
         } detail: {
             if vm.selectedRecording != nil {
                 RecordingDetailView(vm: vm)
@@ -29,5 +43,20 @@ struct ContentView: View {
         } message: {
             Text(vm.errorMessage ?? "")
         }
+        #if os(iOS)
+        .sheet(isPresented: $showingSettings) {
+            NavigationStack {
+                SettingsView()
+                    .environment(settings)
+                    .navigationTitle(settings.t("settings_title"))
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button(settings.t("ok")) { showingSettings = false }
+                        }
+                    }
+            }
+        }
+        #endif
     }
 }

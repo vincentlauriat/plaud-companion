@@ -1,5 +1,63 @@
 # CHANGES
 
+## 2026-06-28 (suite) — Portage iOS implémenté (Phase 8.0–8.3), build vert
+
+### Added
+- **Cible iOS/iPadOS `PlaudiOS`** ajoutée à `project.yml` (xcodegen) — codebase 100 % partagé
+  avec la cible macOS, `IPHONEOS_DEPLOYMENT_TARGET = 17.0`, `TARGETED_DEVICE_FAMILY = 1,2`,
+  Info.plist iOS généré (`PlaudApp/Info-iOS.plist`). Schemes `Plaud` (macOS) + `PlaudiOS` (iOS).
+- **Réglages sur iOS** : bouton ⚙️ dans la toolbar de `ContentView` ouvrant `SettingsView` en
+  feuille (`NavigationStack` + bouton OK) — remplace la scène `Settings` macOS, absente sur iOS.
+- **Partage iOS** (`ShareSheet`) : `UIActivityViewController` pour exporter `.docx` et images
+  (avec ancrage popover iPad), en remplacement des `NSSavePanel`/`NSOpenPanel` macOS.
+- **Icône iOS** : entrée `universal/ios` 1024×1024 dans l'AppIcon set (réutilise `icon_1024.png`) ;
+  iOS/iPad icons générées au build.
+
+### Changed
+- `MarkdownWebView` : conformité scindée en extensions conditionnelles
+  (`NSViewRepresentable` macOS / `UIViewRepresentable` iOS) ; moteur Markdown→HTML partagé.
+  Sur iOS, fond transparent via `isOpaque/backgroundColor/scrollView` (pas de `drawsBackground`).
+- `PlaudApp.swift` : modifiers de scène macOS-only (`windowStyle`, `windowToolbarStyle`,
+  `defaultSize`, `commands`, scène `Settings`) isolés en `#if os(macOS)`.
+- `DocxExporter` : dimensions d'image lues via **ImageIO** (`CGImageSource`) au lieu de
+  `NSBitmapImageRep` → désormais partagé, supprime une dépendance AppKit du chemin commun.
+- `TokenStore` : chemin du token conditionnel — `~/.plaud/tokens-mcp.json` (macOS, écrit par le
+  CLI MCP) vs `Application Support/Plaud/tokens-mcp.json` (iOS, conteneur de l'app).
+- `SettingsView` : `.frame(width:height:)` fixe isolé en `#if os(macOS)`.
+
+### Verified
+- `xcodebuild` **vert sur les deux cibles** : macOS (`Plaud`) et iOS Simulateur (`PlaudiOS`,
+  binaire universel x86_64+arm64). Non-régression macOS confirmée.
+
+### Added (suite — provisioning du token iOS)
+- **Champ de collage du token dans les Réglages iOS** : section « Authentification Plaud »
+  (iOS uniquement) où l'utilisateur colle le contenu de `tokens-mcp.json` (copié depuis son Mac).
+  Statut token présent/absent affiché. Rend l'app iOS authentifiable sur device.
+- `TokenStore` : ajout de `hasToken()` et `importToken(json:)` (valide le JSON puis écrit dans le
+  conteneur de l'app). Clés de localisation fr/en/zh (`settings_token`, `token_present`, etc.).
+- Build re-vérifié vert sur les deux cibles après ajout.
+
+### À faire (smoke test)
+- Test fonctionnel sur device/simulateur : coller le token → liste → note → export → sync Notion.
+- Finitions UI iPhone/iPad (8.4).
+
+## 2026-06-28 — Plan de portage iOS (analyse de faisabilité)
+
+### Docs
+- **`PLAN.md`** : ajout de la **Phase 8 — Portage iOS / iPadOS** (proposée). Audit de portabilité
+  (~95 % du code déjà portable : réseau, modèles, Keychain, cache, `NavigationSplitView`), 3 fichiers
+  macOS-spécifiques à adapter (`PlaudApp.swift`, `MarkdownWebView.swift`, `NotesView.swift`),
+  découpage en sous-phases 8.0→8.5, estimation ~2–4 j, questions ouvertes et hors-périmètre.
+
+### Decisions
+- **Alignement Plaud confirmé** : l'app consomme déjà l'API REST officielle
+  `platform.plaud.ai/developer/api/open/third-party` (Bearer). Le **Plaud Embedded Starter SDK**
+  (capture matériel) est hors périmètre — sa contrainte « arm64-only / pas de simulateur / device
+  physique » ne s'applique donc pas à Companion (reader cloud + sync Notion).
+- **Cible iOS 17** retenue (SwiftUI moderne : `@Observable`, `NavigationSplitView`, `ContentUnavailableView`).
+- **À acter avant publication App Store** : valider l'obtention du Bearer token vs conditions dev Plaud
+  (le kit officiel recommande un JWT minté côté backend, Secret Key jamais embarquée).
+
 ## 2026-06-25 — Fix : décodage des notes abîmées (JSON imbriqué)
 
 ### Fixed

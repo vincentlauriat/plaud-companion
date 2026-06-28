@@ -3,21 +3,13 @@ import WebKit
 
 /// WebView qui rend du HTML/Markdown avec un style Apple natif.
 /// Remplit son conteneur et gère son propre scroll.
-struct MarkdownWebView: NSViewRepresentable {
+///
+/// `WKWebView` est identique sur macOS et iOS ; seule la conformité au
+/// protocole de représentation diffère (`NSViewRepresentable` vs
+/// `UIViewRepresentable`). Le moteur Markdown→HTML (`convert`/`wrapped`) est
+/// partagé entre les deux plateformes.
+struct MarkdownWebView {
     let html: String
-
-    func makeNSView(context: Context) -> WKWebView {
-        let cfg = WKWebViewConfiguration()
-        cfg.preferences.setValue(true, forKey: "developerExtrasEnabled")
-        let wv = WKWebView(frame: .zero, configuration: cfg)
-        wv.setValue(false, forKey: "drawsBackground")
-        wv.allowsMagnification = false
-        return wv
-    }
-
-    func updateNSView(_ wv: WKWebView, context: Context) {
-        wv.loadHTMLString(wrapped(html), baseURL: nil)
-    }
 
     // MARK: - Markdown → HTML
 
@@ -352,3 +344,43 @@ struct MarkdownWebView: NSViewRepresentable {
         """
     }
 }
+
+// MARK: - Conformité au protocole de représentation (par plateforme)
+//
+// `WKWebView` est identique des deux côtés ; seule la conformité diffère
+// (`NSViewRepresentable` sur macOS, `UIViewRepresentable` sur iOS). On la place
+// dans des extensions conditionnelles plutôt que dans la déclaration de la
+// struct, car `#if` ne peut pas scinder une déclaration de type ouverte.
+
+#if os(macOS)
+extension MarkdownWebView: NSViewRepresentable {
+    func makeNSView(context: Context) -> WKWebView {
+        let cfg = WKWebViewConfiguration()
+        cfg.preferences.setValue(true, forKey: "developerExtrasEnabled")
+        let wv = WKWebView(frame: .zero, configuration: cfg)
+        wv.setValue(false, forKey: "drawsBackground")
+        wv.allowsMagnification = false
+        return wv
+    }
+
+    func updateNSView(_ wv: WKWebView, context: Context) {
+        wv.loadHTMLString(wrapped(html), baseURL: nil)
+    }
+}
+#else
+extension MarkdownWebView: UIViewRepresentable {
+    func makeUIView(context: Context) -> WKWebView {
+        let cfg = WKWebViewConfiguration()
+        let wv = WKWebView(frame: .zero, configuration: cfg)
+        // Fond transparent pour épouser l'arrière-plan SwiftUI.
+        wv.isOpaque = false
+        wv.backgroundColor = .clear
+        wv.scrollView.backgroundColor = .clear
+        return wv
+    }
+
+    func updateUIView(_ wv: WKWebView, context: Context) {
+        wv.loadHTMLString(wrapped(html), baseURL: nil)
+    }
+}
+#endif
