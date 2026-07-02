@@ -60,7 +60,7 @@ struct TranscriptView: View {
                                     Text(seg.timestampFormatted)
                                         .font(.caption2.monospacedDigit())
                                         .foregroundStyle(.tertiary)
-                                        .frame(width: 38, alignment: .trailing)
+                                        .frame(minWidth: 38, alignment: .trailing)
                                         .padding(.top, 2)
                                     Text(seg.content ?? "")
                                         .font(.body)
@@ -133,11 +133,12 @@ struct OutlineView: View {
             } label: {
                 HStack(alignment: .top, spacing: 12) {
                     Text("\(index + 1)")
-                        .font(.caption.monospacedDigit().bold())
+                        .font(.system(size: 12, weight: .bold, design: .monospaced))
                         .foregroundStyle(.white)
                         .frame(width: 22, height: 22)
                         .background(Color.accentColor, in: Circle())
                         .padding(.top, 1)
+                        .accessibilityHidden(true)
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text(seg.topic ?? "(sans titre)")
@@ -180,7 +181,7 @@ struct OutlineView: View {
                                 Text(s.timestampFormatted)
                                     .font(.caption2.monospacedDigit())
                                     .foregroundStyle(.tertiary)
-                                    .frame(width: 38, alignment: .trailing)
+                                    .frame(minWidth: 38, alignment: .trailing)
                                     .padding(.top, 2)
                                 VStack(alignment: .leading, spacing: 1) {
                                     if let sp = s.speaker, !sp.isEmpty {
