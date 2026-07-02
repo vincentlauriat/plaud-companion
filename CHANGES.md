@@ -1,5 +1,25 @@
 # CHANGES
 
+## 2026-07-02 — Finitions iOS : cibles tactiles + Dynamic Type (8.4)
+
+### Changed
+- `RecordingDetailView` : bouton refresh (icône seule, sans texte) — cible tactile portée à
+  44×44 pt (`frame(minWidth:minHeight:)` + `contentShape(Rectangle())`) + label d'accessibilité,
+  pour respecter le minimum HIG iOS.
+- `TranscriptView` : colonnes de timestamp (`frame(width: 38)`) passées en `minWidth` pour éviter
+  toute troncature aux tailles de police d'accessibilité les plus grandes.
+- `TranscriptView` (`OutlineView`) : badge numéroté des chapitres (cercle 22×22 pt) — police fixée
+  à une taille non-scalable (au lieu de `.caption`, qui aurait débordé du cercle en Dynamic Type
+  XXL) et masqué à VoiceOver (redondant avec le titre du chapitre déjà annoncé).
+
+### Verified
+- Build vert macOS **et** iOS Simulateur.
+- Simulateur iPad mini, `content_size accessibility-extra-extra-extra-large` (taille de police
+  d'accessibilité maximale) : liste vide, recherche, barre d'outils et alerte d'erreur token
+  s'affichent sans troncature. Sidebar (`NavigationSplitView`) déjà correcte nativement.
+- Non testé (nécessite un vrai token / device) : picker segmenté à 4 onglets, sélecteur de notes,
+  transcription — reporté à 8.5c (smoke test complet).
+
 ## 2026-06-28 (suite 5) — Sélecteur de note compact (ne mange plus l'écran)
 
 ### Changed

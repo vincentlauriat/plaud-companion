@@ -33,10 +33,13 @@ struct RecordingDetailView: View {
                         Task { await vm.refreshCurrentRecording() }
                     } label: {
                         Image(systemName: "arrow.clockwise")
+                            .frame(minWidth: 44, minHeight: 44)
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(.borderless)
                     .disabled(vm.isLoadingDetail)
                     .help(settings.t("refresh_recording_help"))
+                    .accessibilityLabel(settings.t("refresh_recording_help"))
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 14)
