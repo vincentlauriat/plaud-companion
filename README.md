@@ -44,6 +44,7 @@ Plaud devices record audio and the Plaud cloud turns it into **AI summaries, str
 - 📂 Lists **all your recordings**, grouped by date, with instant search.
 - 📝 Shows the **AI summary**, the **AI notes** (nicely rendered Markdown), and the **full transcription**.
 - 🗣️ Breaks down **who spoke and for how long** (speaker stats).
+- 👥 Lets you **browse recordings by person** — a directory built from the speakers detected in your meetings.
 - 🧭 Lets you click a chapter in the **outline** to jump straight to the matching transcript segments.
 - 🔄 **Syncs everything to Notion** — one direction, only what changed, so you never re‑copy the same notes twice.
 - 🌍 Speaks **English, French and Chinese**, follows light/dark mode, and works offline thanks to a local cache.
@@ -62,6 +63,7 @@ It is **read‑only** against Plaud (it never edits or deletes anything in your 
 | **Transcription tab** | Three views: **Raw** (with timestamps & speakers), **Polished** (Plaud's cleaned‑up version), and **Outline** (chapters). |
 | **Interactive outline** | Click a chapter → it expands and shows the raw transcript segments that fall within its time range. |
 | **Speakers tab** | Per‑speaker talk time, percentage, and number of interventions, with progress bars. |
+| **People view** | Switch the sidebar to **People** to browse a **directory of speakers** built from your meetings: pick a person to see every recording they took part in, then jump to its detail. The index fills in **progressively** as you open recordings, or all at once with **Index all**. |
 | **Always up to date** | Opening a recording revalidates it in the background; a per‑recording **Refresh** button and a **Clear cache** action force a re‑download (e.g. after renaming speakers in Plaud). |
 | **Notion sync** | One‑way **Plaud → Notion**, incremental (diff by content hash), works with a **database** *or* a **page**, auto‑fills table columns, pushes **every note in full** and **uploads images** as persistent Notion files. |
 | **Local cache** | Recordings and notes are cached under *Application Support* for instant reopening and offline reading. |
@@ -113,15 +115,15 @@ It is **read‑only** against Plaud (it never edits or deletes anything in your 
 - **macOS 14 (Sonoma) or later**
 - For building from source: **Xcode 15+** and **[XcodeGen](https://github.com/yonaskolb/XcodeGen)** (`brew install xcodegen`)
 
-### Option A — Download (coming soon)
+### Option A — Download (recommended)
 
-A **signed & notarized** `.dmg` will be published on the [**Releases**](https://github.com/vincentlauriat/plaud-companion/releases) page. Once available:
+A **signed & notarized** `.dmg` is published on the [**Releases**](https://github.com/vincentlauriat/plaud-companion/releases) page:
 
-1. Download `PlaudCompanion-<version>.dmg`.
+1. Download `PlaudCompanion-<version>.dmg` from the latest release.
 2. Open it and drag **Plaud Companion** into your `Applications` folder.
 3. Launch it normally — because the app is notarized by Apple, Gatekeeper opens it without warnings.
 
-> _Until the DMG is out, please build from source (Option B). Maintainers: see [`RELEASE.md`](RELEASE.md) for the signing/notarization pipeline._
+> _Maintainers: see [`RELEASE.md`](RELEASE.md) for the signing/notarization pipeline._
 
 ### Option B — Build from source
 
@@ -165,6 +167,7 @@ Plaud Companion does **not** ask for your Plaud password. Instead it reuses the 
 ## 🖱️ Using the app
 
 - **Browse** — the sidebar lists every recording, grouped by date. Type in the search box to filter by name. A small badge marks recordings whose notes are cached locally.
+- **Browse by person** — flip the sidebar's **Meetings / People** switch to **People**: you get a directory of speakers, each with the number of meetings they appear in. Pick a person to see all their recordings, then select one to open its detail. The directory builds up as you open recordings; use **Index all** to fill it in one pass. *(Speaker labels come from Plaud's diarization — rename speakers in Plaud and hit Refresh to get real names everywhere.)*
 - **Refresh** — the toolbar refresh button re‑fetches the full list from Plaud.
 - **Read** — select a recording to open the detail view with four tabs:
   - **Summary** — the AI summary.
@@ -277,7 +280,8 @@ plaud-companion/
 - [x] Per‑recording refresh + stale‑while‑revalidate + clear‑cache
 - [x] **One‑way incremental Notion sync** (database or page, auto column mapping)
 - [x] Push **full note content + images** to Notion (persistent file uploads)
-- [ ] Prebuilt signed `.dmg` on the Releases page
+- [x] **Browse recordings by person** (People directory from speaker diarization)
+- [x] Prebuilt signed `.dmg` on the Releases page
 - [ ] Cache raw transcription & outline (currently re‑fetched per open)
 - [ ] Built‑in audio player synced to transcript timestamps
 - [ ] Export a recording to Markdown / PDF

@@ -1,16 +1,46 @@
 import SwiftUI
 
+/// Mode de navigation de la barre latérale : par réunion ou par personne.
+enum BrowseMode: String, CaseIterable, Identifiable {
+    case meetings, people
+    var id: String { rawValue }
+    var titleKey: String { self == .meetings ? "mode_meetings" : "mode_people" }
+}
+
 struct ContentView: View {
     @Environment(AppSettings.self) private var settings
     @State private var vm = RecordingsViewModel()
     @State private var selectedId: String?
+    @State private var browseMode: BrowseMode = .meetings
     #if os(iOS)
     @State private var showingSettings = false
     #endif
 
+    /// Barre latérale : sélecteur de mode + liste (réunions ou personnes).
+    @ViewBuilder private var sidebar: some View {
+        VStack(spacing: 0) {
+            Picker("", selection: $browseMode) {
+                ForEach(BrowseMode.allCases) { mode in
+                    Text(settings.t(mode.titleKey)).tag(mode)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            Divider()
+            switch browseMode {
+            case .meetings:
+                RecordingListView(vm: vm, selectedId: $selectedId)
+            case .people:
+                PeopleListView(vm: vm, selectedId: $selectedId)
+            }
+        }
+    }
+
     var body: some View {
         NavigationSplitView {
-            RecordingListView(vm: vm, selectedId: $selectedId)
+            sidebar
                 .navigationSplitViewColumnWidth(min: 240, ideal: 280, max: 360)
                 #if os(iOS)
                 .toolbar {

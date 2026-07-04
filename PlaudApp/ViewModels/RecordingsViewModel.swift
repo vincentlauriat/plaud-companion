@@ -22,6 +22,14 @@ final class RecordingsViewModel {
     var errorMessage: String?
     var cachedIds: Set<String> = []
 
+    // MARK: Index des personnes (interlocuteurs)
+    /// `recordingID → libellés de speakers`, alimenté progressivement à chaque
+    /// `fetchDetail` et persisté via `PlaudCache`.
+    var speakerIndex: [String: [String]] = [:]
+    var isIndexing = false
+    var indexDone = 0
+    var indexTotal = 0
+
     // MARK: Synchro Notion
     var isSyncing = false
     var syncDone = 0
@@ -34,6 +42,32 @@ final class RecordingsViewModel {
         return recordings.filter {
             ($0.name ?? "").localizedCaseInsensitiveContains(searchText)
         }
+    }
+
+    /// Annuaire des personnes : inversion de `speakerIndex` (speaker → réunions),
+    /// trié par nombre de réunions décroissant puis par nom.
+    var people: [Person] {
+        var byName: [String: [String]] = [:]
+        for (recordingID, speakers) in speakerIndex {
+            for speaker in speakers {
+                byName[speaker, default: []].append(recordingID)
+            }
+        }
+        return byName
+            .map { Person(name: $0.key, recordingIDs: $0.value) }
+            .sorted {
+                $0.meetingCount != $1.meetingCount
+                    ? $0.meetingCount > $1.meetingCount
+                    : $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
+            }
+    }
+
+    /// Réunions où cette personne apparaît, plus récentes en premier.
+    func recordings(for person: Person) -> [Recording] {
+        let ids = Set(person.recordingIDs)
+        return recordings
+            .filter { ids.contains($0.id) }
+            .sorted { ($0.date ?? .distantPast) > ($1.date ?? .distantPast) }
     }
 
     var grouped: [(key: String, recordings: [Recording])] {
@@ -66,6 +100,9 @@ final class RecordingsViewModel {
     // MARK: - List
 
     func loadRecordings(forceRefresh: Bool = false) async {
+        if speakerIndex.isEmpty {
+            speakerIndex = await PlaudCache.shared.loadSpeakerIndex()
+        }
         if !forceRefresh, let cached = await PlaudCache.shared.loadRecordings(), !cached.isEmpty {
             recordings = cached
             await rebuildCachedIds(for: cached)
@@ -153,6 +190,7 @@ final class RecordingsViewModel {
             notes = detail.noteList ?? []
             transcriptSegments = detail.transcriptSegments
             outlineSegments = detail.outlineSegments
+            await indexSpeakers(from: detail, id: rec.id)
             // Le rendu déjà calculé pouvait provenir du cache (URLs d'images S3
             // pré-signées désormais expirées → 403). On l'invalide pour forcer un
             // recalcul avec les URLs fraîches de ce détail.
@@ -226,6 +264,41 @@ final class RecordingsViewModel {
             return (try? await PlaudAPI.shared.fetchNoteMarkdown(from: link)) ?? ""
         }
         return ""
+    }
+
+    // MARK: - Index des personnes
+
+    /// Libellés de speakers distincts et non vides d'un détail (les speakers `nil`
+    /// — « Inconnu » — sont ignorés pour ne pas polluer l'annuaire).
+    private func extractSpeakers(from detail: RecordingDetail) -> [String] {
+        let names = detail.transcriptSegments.compactMap {
+            $0.speaker?.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        return Array(Set(names.filter { !$0.isEmpty })).sorted()
+    }
+
+    /// Extrait les speakers d'un détail et les persiste dans l'index (mémoire + disque).
+    private func indexSpeakers(from detail: RecordingDetail, id: String) async {
+        let speakers = extractSpeakers(from: detail)
+        guard !speakers.isEmpty else { return }
+        speakerIndex[id] = speakers
+        await PlaudCache.shared.updateSpeakers(id: id, speakers: speakers)
+    }
+
+    /// Rattrapage complet : charge le détail de toutes les réunions pour bâtir
+    /// l'annuaire des personnes d'un coup (N appels API, avec progression).
+    func indexAllRecordings() async {
+        guard !isIndexing, !recordings.isEmpty else { return }
+        isIndexing = true
+        indexDone = 0
+        indexTotal = recordings.count
+        for rec in recordings {
+            if let detail = try? await PlaudAPI.shared.getFile(id: rec.id) {
+                await indexSpeakers(from: detail, id: rec.id)
+            }
+            indexDone += 1
+        }
+        isIndexing = false
     }
 
     // MARK: - Synchro Notion

@@ -1,5 +1,43 @@
 # CHANGES
 
+## 2026-07-04 — v1.1.0 — Retrouver les notes par personne (annuaire d'interlocuteurs)
+_Branche `feat/people-index` → mergée dans `main`. PLAN.md Phase 10. Release DMG signé + notarisé v1.1.0._
+
+### Added
+- **Vue « Par personne »** : bascule segmentée « Réunions / Personnes » en tête de la barre latérale
+  (`ContentView`, nouveau `BrowseMode`). Le mode Personnes affiche un annuaire des interlocuteurs ;
+  sélectionner une personne pousse la liste de ses réunions ; sélectionner une réunion ouvre son détail.
+- `PlaudApp/Models/Person.swift` : modèle `Person` (libellé de speaker + réunions associées).
+- `PlaudApp/Views/PeopleListView.swift` : annuaire (recherche par nom, badge nombre de réunions,
+  bouton « Tout indexer », état vide expliquant l'indexation progressive).
+- `PlaudApp/Views/PersonRecordingsView.swift` : réunions d'une personne (réutilise `RecordingRowView`).
+- **Index des interlocuteurs** persisté dans `cache/speakers.json` (`recordingID → [speakers]`) :
+  `PlaudCache.loadSpeakerIndex/saveSpeakerIndex/updateSpeakers`.
+- `RecordingsViewModel` : `speakerIndex`, `people` (inversion triée), `recordings(for:)`,
+  extraction des speakers au fil des ouvertures (`indexSpeakers` branché dans `fetchDetail`),
+  et **rattrapage complet** `indexAllRecordings()` (avec progression `indexDone/indexTotal`).
+- i18n (fr/en/zh) : `mode_meetings`, `mode_people`, `search_people`, `index_all`(+help),
+  `no_people_*`, `no_person_recordings_*`.
+
+### Decisions
+- Source des personnes = **speakers de la diarization** (`TranscriptSegment.speaker`), les seuls
+  disponibles. Speaker `nil` (« Inconnu ») **non indexé** pour ne pas créer un fourre-tout inter-réunions.
+- **Indexation progressive** : une réunion apparaît sous une personne après sa 1ʳᵉ ouverture ;
+  le bouton « Tout indexer » comble l'annuaire à la demande (N appels `getFile`).
+- Limite assumée : la diarization n'est pas nommée (« Speaker 1/2 »), un même libellé peut désigner
+  des personnes différentes selon la réunion → pour de vrais noms, renommer côté Plaud puis rafraîchir.
+
+### Fixed (2026-07-04, même jour)
+- **Clic sur une personne n'affichait pas ses réunions** : le `NavigationStack` imbriqué dans la
+  colonne de la `NavigationSplitView` ne poussait pas (sur macOS, un `NavigationLink` en barre
+  latérale pilote la sélection de colonne). Remplacé par un **drill-down piloté par état**
+  (`selectedPerson` dans `PeopleListView` + en-tête « ← Personnes » dans `PersonRecordingsView`).
+  Corrige aussi de facto le risque de double barre de navigation sur iPhone. Clé i18n `back`.
+
+### Verified
+- `xcodebuild` **BUILD SUCCEEDED** macOS **et** iOS Simulateur (Debug, exit 0). Rebuild macOS
+  vert après le fix navigation ; app relancée pour test.
+
 ## 2026-07-04 — Robustesse réseau : images 403, retry token, fin du sablier infini
 
 ### Contexte

@@ -117,6 +117,18 @@ enum Strings {
             "notion_updated": "Mis à jour",
             "notion_skipped": "Inchangés",
             "notion_failed": "Échecs",
+
+            // Personnes / annuaire
+            "mode_meetings": "Réunions",
+            "mode_people": "Personnes",
+            "search_people": "Rechercher une personne…",
+            "index_all": "Tout indexer",
+            "index_all_help": "Charger toutes les réunions pour compléter l'annuaire des personnes",
+            "no_people_title": "Aucune personne",
+            "no_people_desc": "Ouvre des réunions (ou lance « Tout indexer ») pour construire l'annuaire à partir des interlocuteurs détectés.",
+            "no_person_recordings_title": "Aucune réunion",
+            "no_person_recordings_desc": "Aucune réunion indexée pour cette personne.",
+            "back": "Personnes",
         ],
 
         "en": [
@@ -219,6 +231,18 @@ enum Strings {
             "notion_updated": "Updated",
             "notion_skipped": "Unchanged",
             "notion_failed": "Failed",
+
+            // People / directory
+            "mode_meetings": "Meetings",
+            "mode_people": "People",
+            "search_people": "Search a person…",
+            "index_all": "Index all",
+            "index_all_help": "Load all meetings to complete the people directory",
+            "no_people_title": "No people",
+            "no_people_desc": "Open meetings (or run “Index all”) to build the directory from detected speakers.",
+            "no_person_recordings_title": "No meetings",
+            "no_person_recordings_desc": "No indexed meetings for this person.",
+            "back": "People",
         ],
 
         "zh": [
@@ -321,6 +345,18 @@ enum Strings {
             "notion_updated": "已更新",
             "notion_skipped": "未变更",
             "notion_failed": "失败",
+
+            // 人物 / 目录
+            "mode_meetings": "会议",
+            "mode_people": "人物",
+            "search_people": "搜索人物…",
+            "index_all": "索引全部",
+            "index_all_help": "加载所有会议以完善人物目录",
+            "no_people_title": "暂无人物",
+            "no_people_desc": "打开会议（或运行“索引全部”）以根据检测到的发言人构建目录。",
+            "no_person_recordings_title": "暂无会议",
+            "no_person_recordings_desc": "该人物暂无已索引的会议。",
+            "back": "人物",
         ],
     ]
 }
