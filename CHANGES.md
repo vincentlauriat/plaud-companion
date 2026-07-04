@@ -38,6 +38,13 @@ _Branche `feat/people-index` → mergée dans `main`. PLAN.md Phase 10. Release 
 - `xcodebuild` **BUILD SUCCEEDED** macOS **et** iOS Simulateur (Debug, exit 0). Rebuild macOS
   vert après le fix navigation ; app relancée pour test.
 
+### Docs
+- **Landing page** produit ajoutée (`docs/index.html`) servie via **GitHub Pages** sur
+  **https://vincentlauriat.github.io/plaud-companion/** (source `main` / `docs`). Charte alignée sur
+  les landings MarkdownViewer/AuditViewer, accent orange Plaud, mock de l'app mettant en avant la vue
+  « Par personne ». Homepage du repo + badge/lien Website dans le README. Carte du portfolio
+  (`vincentlauriat.github.io`) pointée vers la landing (« Visit ») + lien Download.
+
 ## 2026-07-04 — Robustesse réseau : images 403, retry token, fin du sablier infini
 
 ### Contexte
