@@ -49,6 +49,30 @@ actor PlaudCache {
         )
     }
 
+    // MARK: Index des interlocuteurs (speakers)
+
+    /// Index `recordingID → [libellés de speakers]`, construit progressivement à
+    /// chaque ouverture d'un enregistrement (les speakers ne sont pas dans le
+    /// cache des notes, seulement dans les segments de transcription en mémoire).
+    func loadSpeakerIndex() -> [String: [String]] {
+        let url = cacheDir.appendingPathComponent("speakers.json")
+        guard let data = try? Data(contentsOf: url) else { return [:] }
+        return (try? JSONDecoder().decode([String: [String]].self, from: data)) ?? [:]
+    }
+
+    func saveSpeakerIndex(_ index: [String: [String]]) {
+        let url = cacheDir.appendingPathComponent("speakers.json")
+        try? JSONEncoder().encode(index).write(to: url)
+    }
+
+    /// Met à jour l'entrée d'un seul enregistrement et persiste immédiatement
+    /// (la progression d'une indexation longue survit ainsi à une interruption).
+    func updateSpeakers(id: String, speakers: [String]) {
+        var index = loadSpeakerIndex()
+        index[id] = speakers
+        saveSpeakerIndex(index)
+    }
+
     /// Invalide le cache de notes d'un seul enregistrement (force un re-fetch).
     func clearNotes(id: String) {
         try? FileManager.default.removeItem(
