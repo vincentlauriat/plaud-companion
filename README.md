@@ -9,6 +9,9 @@
 [![Swift](https://img.shields.io/badge/Swift-5.9-orange)](https://swift.org)
 [![SwiftUI](https://img.shields.io/badge/UI-SwiftUI-blue)]()
 [![License](https://img.shields.io/badge/license-MIT-green)](#-license)
+[![Website](https://img.shields.io/badge/website-plaud--companion-FF7A45)](https://vincentlauriat.github.io/plaud-companion/)
+
+**[🌐 plaud‑companion landing page →](https://vincentlauriat.github.io/plaud-companion/)**
 
 </div>
 
