@@ -30,17 +30,78 @@ struct NoteSection: Codable, Identifiable {
         dataLink = try c.decodeIfPresent(String.self, forKey: .dataLink)
         downloadLinkMap = try c.decodeIfPresent([String: String].self, forKey: .downloadLinkMap)
 
-        // Décode dataContent : peut être une chaîne JSON imbriquée (nécessite un décodage supplémentaire)
-        // ou une chaîne simple (Markdown). Extrait ai_content si présent, sinon utilise la chaîne brute.
+        // Décode dataContent : peut être une chaîne JSON imbriquée (objet avec
+        // `ai_content`, ou tableau de « marks »/temps forts) ou du Markdown brut.
         let rawContent = try c.decodeIfPresent(String.self, forKey: .dataContent)
-        if let raw = rawContent, !raw.isEmpty,
-           let data = raw.data(using: .utf8),
-           let jsonObj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-           let aiContent = jsonObj["ai_content"] as? String {
-            dataContent = aiContent
-        } else {
-            dataContent = rawContent
+        dataContent = Self.normalizedContent(rawContent, imageMap: downloadLinkMap)
+    }
+
+    /// Normalise `data_content` en Markdown affichable :
+    /// - objet JSON avec `ai_content` → extrait le résumé IA ;
+    /// - tableau de « marks » Plaud (temps forts, clé `marktype`) → Markdown lisible ;
+    /// - tout le reste (Markdown brut, segments de transcription/outline) → inchangé.
+    private static func normalizedContent(_ raw: String?, imageMap: [String: String]?) -> String? {
+        guard let raw, !raw.isEmpty,
+              let data = raw.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data) else {
+            return raw
         }
+        if let obj = json as? [String: Any], let aiContent = obj["ai_content"] as? String {
+            return aiContent
+        }
+        // Uniquement les tableaux de marks (présence de `marktype`) : on évite
+        // ainsi de transformer les tableaux de segments (transaction/outline)
+        // qui doivent rester du JSON décodable par ailleurs.
+        if let marks = json as? [[String: Any]], marks.first?["marktype"] != nil {
+            let md = marksMarkdown(marks, imageMap: imageMap)
+            return md.isEmpty ? raw : md
+        }
+        return raw
+    }
+
+    /// Convertit un tableau de marks en Markdown : un bloc par temps fort
+    /// (titre, horodatage, image optionnelle, contenu), séparés par une règle.
+    private static func marksMarkdown(_ marks: [[String: Any]], imageMap: [String: String]?) -> String {
+        var blocks: [String] = []
+        for mark in marks {
+            var parts: [String] = []
+
+            let title = (mark["title"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            if !title.isEmpty { parts.append("## \(title)") }
+
+            if let ms = (mark["timestamp"] as? NSNumber)?.intValue, ms > 0 {
+                parts.append("`\(timecode(ms))`")
+            }
+
+            // Image du temps fort — uniquement si le chemin est résoluble en URL
+            // (présent dans `download_link_map`), pour éviter une image cassée.
+            if let pic = (mark["picturelink"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines),
+               !pic.isEmpty, imageMap?[pic] != nil {
+                parts.append("![](\(pic))")
+            }
+
+            let content = (mark["content"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            if !content.isEmpty { parts.append(normalizeBullets(content)) }
+
+            if !parts.isEmpty { blocks.append(parts.joined(separator: "\n\n")) }
+        }
+        return blocks.joined(separator: "\n\n---\n\n")
+    }
+
+    /// Remplace les puces Unicode « • » en tête de ligne par des puces Markdown « - ».
+    private static func normalizeBullets(_ text: String) -> String {
+        text.components(separatedBy: "\n").map { line -> String in
+            let t = line.trimmingCharacters(in: .whitespaces)
+            if t.hasPrefix("• ") { return "- " + t.dropFirst(2) }
+            if t == "•" { return "-" }
+            return line
+        }.joined(separator: "\n")
+    }
+
+    /// `223000` ms → `"03:43"`.
+    private static func timecode(_ ms: Int) -> String {
+        let s = ms / 1000
+        return String(format: "%02d:%02d", s / 60, s % 60)
     }
 
     func encode(to encoder: Encoder) throws {

@@ -1,5 +1,62 @@
 # CHANGES
 
+## 2026-07-04 — Robustesse réseau : images 403, retry token, fin du sablier infini
+
+### Contexte
+Après le fix du JSON, l'app affichait « texte OK mais images 403 + chargement infini ».
+Diagnostic (en plusieurs temps) :
+- **Faux départ** : les tests directs de l'API renvoyaient 403 → soupçon « token mort ».
+  En réalité **Cloudflare bloque le User-Agent `Python-urllib`** (erreur 1010) ; les tests
+  étaient des faux positifs. L'UA `CFNetwork` de l'app **passe** Cloudflare (vérifié → 200).
+- **Vraie cause n°1** : l'access token avait été **révoqué** côté serveur malgré `expires_at`
+  dans le futur → 403 réel. `TokenStore` ne rafraîchissait jamais (il se fie à `expires_at`).
+  Régénéré via logout/login MCP.
+- **Vraie cause n°2** : `selectRecording` affiche d'abord les notes du **cache** (URLs d'images
+  S3 pré-signées **expirées**), `noteContents` est calculé dessus, puis `fetchDetail` récupère
+  les URLs fraîches **sans jamais invalider le rendu** → images 403 figées.
+
+### Fixed
+- `RecordingsViewModel.fetchDetail` : invalide `noteContents`/`noteErrors`/`loadingNoteIds`
+  après réception d'un détail frais → recalcul du rendu avec les **URLs d'images fraîches**
+  (corrige les images 403 servies depuis le cache).
+- `RecordingsViewModel.loadNoteContent` : en cas d'échec réseau, enregistre l'erreur dans
+  `noteErrors[key]` au lieu de laisser le `ProgressView` tourner indéfiniment (**sablier infini**).
+
+### Added
+- `TokenStore.forceRefresh()` : rafraîchit le token quel que soit `expires_at`.
+- `PlaudAPI` : sur **401/403**, force un refresh du token et **réessaie une fois**
+  (`authorizedData`/`authorizedRequest`, + header `Accept: application/json`).
+- `NotesView` : état d'erreur par note (icône + message + bouton **Réessayer**).
+- i18n `note_load_failed` / `retry` (fr/en/zh).
+
+### Changed
+- `PlaudError.httpError` : message clair sur 401/403 (« session expirée — reconnecte-toi »)
+  au lieu d'un « Erreur HTTP 403 » cryptique.
+
+## 2026-07-04 — Fix affichage : JSON brut des « marks » sous « Points à retenir »
+
+### Fixed
+- `NoteSection` : les notes `high_light` affichaient leur `data_content` en JSON brut
+  (`[{"content":…,"marktype":…,"picturelink":…,"timestamp":…,"title":…}, …]`) au lieu de texte.
+  Cause : `init(from:)` ne savait décoder qu'un objet `{ai_content:…}` ou du Markdown ; un
+  **tableau de marks** tombait dans le `else` et la chaîne brute traversait jusqu'à la WebView.
+
+### Changed
+- `NoteSection.init(from:)` : décodage de `data_content` extrait dans `normalizedContent(_:imageMap:)`.
+  Nouveau cas « tableau de marks » → converti en Markdown lisible par `marksMarkdown` :
+  un bloc par temps fort (titre `## …`, horodatage `` `mm:ss` ``, image `![](…)` **seulement si**
+  le chemin est résoluble via `download_link_map` pour éviter une image cassée, puis contenu avec
+  puces Unicode `• ` normalisées en `- `), blocs séparés par `---`.
+- Garde-fou anti-régression : la conversion n'est appliquée que si le 1er élément possède la clé
+  `marktype`. Les tableaux de segments (`transaction`/`outline`, qui ont aussi une clé `content`
+  mais pas `marktype`) restent du JSON brut et continuent d'être décodés par
+  `RecordingDetail.transcriptSegments`/`outlineSegments`.
+
+### Verification
+- Build vert macOS (`xcodebuild -scheme Plaud -configuration Debug`).
+- Conversion validée sur le payload réel + non-régression segment transcription confirmée via
+  script Swift autonome (`marktype` absent → pas de conversion).
+
 ## 2026-07-02 — Finitions iOS : cibles tactiles + Dynamic Type (8.4)
 
 ### Changed

@@ -39,6 +39,8 @@ enum Strings {
             // Notes
             "no_notes_title": "Aucune note",
             "no_notes_desc": "Les notes IA ne sont pas encore disponibles pour cet enregistrement.",
+            "note_load_failed": "Échec du chargement de la note",
+            "retry": "Réessayer",
 
             // Transcription
             "no_transcript_title": "Transcription indisponible",
@@ -146,6 +148,8 @@ enum Strings {
 
             "no_notes_title": "No notes",
             "no_notes_desc": "AI notes are not available yet for this recording.",
+            "note_load_failed": "Failed to load note",
+            "retry": "Retry",
 
             "no_transcript_title": "Transcription unavailable",
             "no_transcript_desc": "The transcription is not available yet for this recording.",
@@ -246,6 +250,8 @@ enum Strings {
 
             "no_notes_title": "暂无笔记",
             "no_notes_desc": "此录音暂无 AI 笔记。",
+            "note_load_failed": "笔记加载失败",
+            "retry": "重试",
 
             "no_transcript_title": "暂无转录",
             "no_transcript_desc": "此录音暂无转录。",
