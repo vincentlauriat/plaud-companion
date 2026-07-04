@@ -14,7 +14,13 @@ enum PlaudError: LocalizedError {
             return "Token Plaud introuvable. Connecte-toi d'abord via Claude Code."
             #endif
         case .noRefreshToken: return "Token expiré et aucun refresh token disponible. Reconnecte-toi via Claude Code."
-        case .httpError(let code): return "Erreur HTTP \(code)"
+        case .httpError(let code):
+            switch code {
+            case 401, 403:
+                return "Accès refusé (HTTP \(code)). Ta session Plaud a peut-être expiré — reconnecte-toi (login Plaud)."
+            default:
+                return "Erreur HTTP \(code)"
+            }
         }
     }
 }
@@ -49,6 +55,14 @@ actor TokenStore {
             tokens = try await refresh(tokens)
         }
         return tokens.accessToken
+    }
+
+    /// Force un rafraîchissement du token quel que soit `expires_at`. Utile quand
+    /// le serveur rejette l'access token (401/403) avant son expiration nominale
+    /// (révocation ou rotation côté serveur, `expires_at` local trop optimiste).
+    func forceRefresh() async throws -> String {
+        let tokens = try load()
+        return try await refresh(tokens).accessToken
     }
 
     /// `true` si un fichier de token valide est présent (décodable).
@@ -90,6 +104,7 @@ actor TokenStore {
         var req = URLRequest(url: refreshURL)
         req.httpMethod = "POST"
         req.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        req.setValue(plaudUserAgent, forHTTPHeaderField: "User-Agent")
         req.httpBody = "refresh_token=\(refreshToken)".data(using: .utf8)
 
         let (data, resp) = try await URLSession.shared.data(for: req)

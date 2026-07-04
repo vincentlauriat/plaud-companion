@@ -13,6 +13,8 @@ final class RecordingsViewModel {
     var notes: [NoteSection] = []
     /// Contenu Markdown résolu (images incluses) par `data_id` de note.
     var noteContents: [String: String] = [:]
+    /// Message d'erreur de chargement par `data_id` (échec réseau d'une note distante).
+    var noteErrors: [String: String] = [:]
     var loadingNoteIds: Set<String> = []
     var transcriptSegments: [TranscriptSegment] = []
     var polishedSegments: [TranscriptSegment] = []
@@ -108,6 +110,7 @@ final class RecordingsViewModel {
         selectedRecording = rec
         notes = []
         noteContents = [:]
+        noteErrors = [:]
         loadingNoteIds = []
         transcriptSegments = []
         polishedSegments = []
@@ -130,6 +133,7 @@ final class RecordingsViewModel {
         guard let rec = selectedRecording else { return }
         await PlaudCache.shared.clearNotes(id: rec.id)
         noteContents = [:]
+        noteErrors = [:]
         loadingNoteIds = []
         transcriptSegments = []
         polishedSegments = []
@@ -149,6 +153,12 @@ final class RecordingsViewModel {
             notes = detail.noteList ?? []
             transcriptSegments = detail.transcriptSegments
             outlineSegments = detail.outlineSegments
+            // Le rendu déjà calculé pouvait provenir du cache (URLs d'images S3
+            // pré-signées désormais expirées → 403). On l'invalide pour forcer un
+            // recalcul avec les URLs fraîches de ce détail.
+            noteContents = [:]
+            noteErrors = [:]
+            loadingNoteIds = []
             await PlaudCache.shared.saveNotes(id: rec.id, notes: notes)
             cachedIds.insert(rec.id)
         } catch {
@@ -179,6 +189,7 @@ final class RecordingsViewModel {
     func loadNoteContent(_ section: NoteSection) async {
         let key = section.dataId
         if noteContents[key] != nil || loadingNoteIds.contains(key) { return }
+        noteErrors[key] = nil
 
         // Contenu inline disponible : résolution immédiate, sans réseau.
         if let inline = section.dataContent,
@@ -198,7 +209,9 @@ final class RecordingsViewModel {
             let markdown = try await PlaudAPI.shared.fetchNoteMarkdown(from: link)
             noteContents[key] = section.resolvingImages(in: markdown)
         } catch {
-            errorMessage = error.localizedDescription
+            // Échec réseau : on sort du spinner en enregistrant l'erreur (la vue
+            // propose de réessayer) plutôt que de laisser tourner indéfiniment.
+            noteErrors[key] = error.localizedDescription
         }
     }
 

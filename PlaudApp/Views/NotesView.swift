@@ -133,6 +133,19 @@ struct NotesView: View {
                 } else {
                     MarkdownWebView(html: bodyHTML(md, section: s))
                 }
+            } else if let err = vm.noteErrors[s.dataId] {
+                ContentUnavailableView {
+                    Label(settings.t("note_load_failed"), systemImage: "exclamationmark.triangle")
+                } description: {
+                    Text(err)
+                } actions: {
+                    Button(settings.t("retry")) {
+                        Task {
+                            vm.noteErrors[s.dataId] = nil
+                            await vm.loadNoteContent(s)
+                        }
+                    }
+                }
             } else {
                 ProgressView(settings.t("loading"))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
