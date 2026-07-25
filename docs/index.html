@@ -139,6 +139,14 @@
     .flow .arrow{transform:rotate(90deg)}
     .nav-links a:not(.btn){display:none}
   }
+
+  /* a11y : respecter la préférence système de mouvement réduit */
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{
+      animation-duration:.01ms !important;animation-iteration-count:1 !important;
+      transition-duration:.01ms !important;scroll-behavior:auto !important;
+    }
+  }
 </style>
 </head>
 <body>
