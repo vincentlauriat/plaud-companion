@@ -1,6 +1,6 @@
 /* ==========================================================================
    base.css — socle commun des landing pages
-   version 1.0.0 — 2026-07-26
+   version 1.0.2 — 2026-07-26
    --------------------------------------------------------------------------
    Ce fichier pose le plancher : tokens, typographie, accessibilité.
    Il ne dessine aucune mise en page — chaque page garde la sienne.
@@ -30,6 +30,14 @@
   /* Accent — redéfini par chaque projet */
   --accent:      #5b8bff;
   --accent-soft: rgba(91,139,255,.14);
+
+  /* Couleur du texte POSÉ SUR l'accent (bouton plein, pastille, skip link).
+     Les accents du corpus sont choisis pour être lisibles *en texte* sur fond
+     sombre : ils sont donc tous clairs, et du blanc dessus tombe entre 1.8:1
+     et 3.9:1 — illisible sur les 14 projets sans exception. Cette encre sombre
+     donne au pire 5.08:1 (TheNews, l'accent le plus foncé). Ne jamais écrire
+     `color:#fff` sur un fond d'accent : utiliser ce token. */
+  --on-accent:   #08090d;
 
   /* Rythme */
   --radius:    14px;
@@ -69,6 +77,10 @@ h1,h2,h3{line-height:1.12;letter-spacing:-.025em;font-weight:800}
 
 /* Relevés monospace — labels, métadonnées, valeurs */
 .mono{font-family:var(--font-mono);font-variant-ligatures:none}
+
+/* Les balises de code : sans cette règle, le navigateur leur applique sa
+   monospace par défaut et JetBrains Mono est chargée pour rien. */
+code,kbd,samp,pre{font-family:var(--font-mono)}
 .eyebrow{
   font-family:var(--font-mono);
   font-size:.7rem;font-weight:600;
@@ -105,7 +117,7 @@ h1,h2,h3{line-height:1.12;letter-spacing:-.025em;font-weight:800}
 /* Lien d'évitement — visible uniquement au clavier */
 .skip{
   position:absolute;left:-9999px;top:0;z-index:var(--z-top);
-  background:var(--accent);color:#fff;padding:10px 16px;border-radius:0 0 var(--radius-sm) 0;
+  background:var(--accent);color:var(--on-accent);padding:10px 16px;border-radius:0 0 var(--radius-sm) 0;
   font-weight:700;
 }
 .skip:focus{left:0}
