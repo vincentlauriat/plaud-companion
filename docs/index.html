@@ -143,45 +143,61 @@
     .flow .arrow{transform:rotate(90deg)}
     .nav-links a:not(.btn){display:none}
   }
+
+  .langtog{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;flex:none}
+  .langtog button{background:transparent;border:0;color:var(--muted);font:600 12.5px/1 var(--font-mono);
+    padding:0 10px;min-height:36px;cursor:pointer}
+  .langtog button+button{border-left:1px solid var(--line)}
+  .langtog button:hover{color:var(--txt)}
+  .langtog button.on{background:var(--accent);color:var(--on-accent)}
+  /* En francais les libelles de nav sont plus longs qu'en anglais : sous 600px
+     la barre deborde de quelques pixels. On resserre le selecteur plutot que
+     de raccourcir un libelle correct. */
+  @media(max-width:600px){.langtog button{padding:0 7px;font-size:11.5px}}
 </style>
 </head>
 <body>
-<a class="skip" href="#top">Skip to content</a>
+<a class="skip" href="#top"><span class="en">Skip to content</span><span class="fr">Aller au contenu</span><span class="zh">跳至內容</span></a>
 
 <nav><div class="wrap">
   <a class="brand" href="#top"><span class="logo"><svg viewBox="0 0 100 100" aria-hidden="true"><g stroke="#fff" stroke-width="9" stroke-linecap="round"><line x1="28" y1="42" x2="28" y2="58"/><line x1="43" y1="30" x2="43" y2="70"/><line x1="58" y1="22" x2="58" y2="78"/><line x1="73" y1="38" x2="73" y2="62"/></g></svg></span>Plaud Companion</a>
   <div class="nav-links">
-    <a href="#features">Features</a>
-    <a href="#why">Why</a>
-    <a href="#notion">Notion</a>
-    <a href="#install">Install</a>
+    <a href="#features"><span class="en">Features</span><span class="fr">Fonctions</span><span class="zh">功能</span></a>
+    <a href="#why"><span class="en">Why</span><span class="fr">Pourquoi</span><span class="zh">為什麼</span></a>
+    <a href="#notion"><span class="en">Notion</span><span class="fr">Notion</span><span class="zh">Notion</span></a>
+    <a href="#install"><span class="en">Install</span><span class="fr">Installer</span><span class="zh">安裝</span></a>
     <a href="https://github.com/vincentlauriat/plaud-companion">GitHub</a>
-    <a class="btn btn-primary btn-sm" href="https://github.com/vincentlauriat/plaud-companion/releases/latest">Download</a>
+    <div class="langtog" role="group" aria-label="Language / Langue / 語言">
+    <button type="button" data-lang="en" class="on" onclick="setLang('en')">EN</button>
+    <button type="button" data-lang="fr" onclick="setLang('fr')">FR</button>
+    <button type="button" data-lang="zh" onclick="setLang('zh')">中文</button>
+  </div>
+    <a class="btn btn-primary btn-sm" href="https://github.com/vincentlauriat/plaud-companion/releases/latest"><span class="en">Download</span><span class="fr">Télécharger</span><span class="zh">下載</span></a>
   </div>
 </div></nav>
 
 <header id="top"><div class="wrap">
   <div class="hero-grid">
     <div>
-      <span class="pill">🆕 New: <b>browse your recordings by person</b></span>
-      <h1>Your Plaud recordings,<br><span class="grad">native on macOS.</span></h1>
-      <p class="sub">Browse, read and search your Plaud voice-recording notes — AI summaries, rich notes, transcriptions and speaker stats — <b>now by person too</b>. And push everything to Notion, one way, only what changed.</p>
+      <span class="pill">🆕 <span class="en">New: <b>browse your recordings by person</b></span><span class="fr">Nouveau : <b>parcourez vos enregistrements par personne</b></span><span class="zh">新功能：<b>依人物瀏覽你的錄音</b></span></span>
+      <h1><span class="en">Your Plaud recordings,<br><span class="grad">native on macOS.</span></span><span class="fr">Vos enregistrements Plaud,<br><span class="grad">nativement sur macOS.</span></span><span class="zh">你的 Plaud 錄音，<span class="grad">在 macOS 上原生呈現。</span></span></h1>
+      <p class="sub"><span class="en">Browse, read and search your Plaud voice-recording notes — AI summaries, rich notes, transcriptions and speaker stats — <b>now by person too</b>. And push everything to Notion, one way, only what changed.</span><span class="fr">Parcourez, lisez et cherchez vos notes d'enregistrements Plaud — résumés IA, notes riches, transcriptions et statistiques de locuteurs — <b>désormais par personne aussi</b>. Et poussez tout vers Notion, dans un seul sens, uniquement ce qui a changé.</span><span class="zh">瀏覽、閱讀並搜尋你的 Plaud 錄音筆記——AI 摘要、豐富筆記、逐字稿與發言者統計——<b>現在也能依人物檢視</b>。並可單向推送到 Notion，只同步變動的部分。</span></p>
       <div class="cta">
-        <a class="btn btn-primary" href="https://github.com/vincentlauriat/plaud-companion/releases/latest">⬇︎ Download for macOS</a>
-        <a class="btn btn-ghost" href="https://github.com/vincentlauriat/plaud-companion">View on GitHub</a>
+        <a class="btn btn-primary" href="https://github.com/vincentlauriat/plaud-companion/releases/latest">⬇︎ <span class="en">Download for macOS</span><span class="fr">Télécharger pour macOS</span><span class="zh">下載 macOS 版</span></a>
+        <a class="btn btn-ghost" href="https://github.com/vincentlauriat/plaud-companion"><span class="en">View on GitHub</span><span class="fr">Voir sur GitHub</span><span class="zh">在 GitHub 上檢視</span></a>
       </div>
-      <p class="meta"><b>Free &amp; open-source (MIT)</b> · Signed &amp; notarized · macOS 14+ · Read-only on Plaud</p>
+      <p class="meta"><span class="en"><b>Free &amp; open-source (MIT)</b> · Signed &amp; notarized · macOS 14+ · Read-only on Plaud</span><span class="fr"><b>Gratuit et open source (MIT)</b> · Signé et notarié · macOS 14+ · Lecture seule sur Plaud</span><span class="zh"><b>免費開源（MIT）</b> · 已簽章與公證 · macOS 14+ · 對 Plaud 唯讀</span></p>
     </div>
 
     <div class="winwrap">
       <div class="win" role="img" aria-label="Plaud Companion showing the People directory: a list of speakers with meeting counts on the left, and the selected person's meetings on the right">
         <div class="titlebar">
           <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
-          <span class="name"><b>Plaud Companion</b> — People</span>
+          <span class="name"><b>Plaud Companion</b> — <span class="en">People</span><span class="fr">Personnes</span><span class="zh">人物</span></span>
         </div>
         <div class="app">
           <div class="side" aria-hidden="true">
-            <div class="seg"><span>Meetings</span><span class="on">People</span></div>
+            <div class="seg"><span><span class="en">Meetings</span><span class="fr">Réunions</span><span class="zh">會議</span></span><span class="on"><span class="en">People</span><span class="fr">Personnes</span><span class="zh">人物</span></span></div>
             <div class="prow sel"><span class="pav">MD</span><span class="nm">Marie Dupont</span><span class="badge">8</span></div>
             <div class="prow"><span class="pav">JM</span><span class="nm">Jean Martin</span><span class="badge">5</span></div>
             <div class="prow"><span class="pav">SL</span><span class="nm">Sophie Leroy</span><span class="badge">4</span></div>
@@ -189,11 +205,11 @@
             <div class="prow"><span class="pav">TB</span><span class="nm">Thomas Bernard</span><span class="badge">2</span></div>
           </div>
           <div class="detail" aria-hidden="true">
-            <div class="dhead">‹ People &nbsp;·&nbsp; <b>Marie Dupont</b></div>
-            <div class="mrow"><div class="t">Product roadmap review</div><div class="d">Jul 2, 2026 · 48m</div></div>
-            <div class="mrow"><div class="t">Q3 planning workshop</div><div class="d">Jun 24, 2026 · 1h12m</div></div>
-            <div class="mrow"><div class="t">1:1 — hiring pipeline</div><div class="d">Jun 18, 2026 · 32m</div></div>
-            <div class="mrow"><div class="t">Design critique</div><div class="d">Jun 11, 2026 · 55m</div></div>
+            <div class="dhead">‹ <span class="en">People</span><span class="fr">Personnes</span><span class="zh">人物</span> &nbsp;·&nbsp; <b>Marie Dupont</b></div>
+            <div class="mrow"><div class="t"><span class="en">Product roadmap review</span><span class="fr">Revue de roadmap produit</span><span class="zh">產品藍圖檢視會議</span></div><div class="d">Jul 2, 2026 · 48m</div></div>
+            <div class="mrow"><div class="t"><span class="en">Q3 planning workshop</span><span class="fr">Atelier de planification T3</span><span class="zh">第三季規劃工作坊</span></div><div class="d">Jun 24, 2026 · 1h12m</div></div>
+            <div class="mrow"><div class="t"><span class="en">1:1 — hiring pipeline</span><span class="fr">1:1 — pipeline de recrutement</span><span class="zh">一對一 — 招募流程</span></div><div class="d">Jun 18, 2026 · 32m</div></div>
+            <div class="mrow"><div class="t"><span class="en">Design critique</span><span class="fr">Critique de design</span><span class="zh">設計評論</span></div><div class="d">Jun 11, 2026 · 55m</div></div>
           </div>
         </div>
       </div>
@@ -203,64 +219,64 @@
 
 <section id="features"><div class="wrap">
   <div class="center">
-    <p class="eyebrow">features</p>
-    <h2>Everything from Plaud — read, searched and reused on your Mac</h2>
-    <p class="lead">A small, fast, native SwiftUI app. It talks to Plaud's official third-party API, read-only, and caches locally so reopening is instant and works offline.</p>
+    <p class="eyebrow"><span class="en">features</span><span class="fr">fonctions</span><span class="zh">功能</span></p>
+    <h2><span class="en">Everything from Plaud — read, searched and reused on your Mac</span><span class="fr">Tout ce qui vient de Plaud — lu, cherché et réutilisé sur votre Mac</span><span class="zh">Plaud 的一切——在你的 Mac 上閱讀、搜尋、再利用</span></h2>
+    <p class="lead"><span class="en">A small, fast, native SwiftUI app. It talks to Plaud's official third-party API, read-only, and caches locally so reopening is instant and works offline.</span><span class="fr">Une app SwiftUI native, petite et rapide. Elle parle à l'API tierce officielle de Plaud, en lecture seule, et met en cache localement pour une réouverture instantanée, même hors ligne.</span><span class="zh">小巧快速的原生 SwiftUI 應用程式。它以唯讀方式呼叫 Plaud 官方的第三方 API，並在本機快取，因此重新開啟時即時可用，離線也能運作。</span></p>
   </div>
   <div class="grid g3">
-    <div class="card"><div class="ico">📂</div><h3>Recordings list</h3><p>Every recording, grouped into Today / This week / Earlier, with live search and a local-cache indicator.</p></div>
-    <div class="card"><div class="ico">📝</div><h3>AI summary &amp; notes</h3><p>The AI summary plus <b>all</b> note types via a dropdown — rich Markdown with task checkboxes, tables, and <b>inline images</b> you can save.</p></div>
-    <div class="card"><div class="ico">🗣️</div><h3>Transcription</h3><p>Three views: <b>Raw</b> (timestamps &amp; speakers), <b>Polished</b>, and an interactive <b>Outline</b> — click a chapter to reveal its transcript.</p></div>
-    <div class="card"><div class="ico">📊</div><h3>Speaker stats</h3><p>Who spoke and for how long — talk time, percentage and number of interventions, with progress bars.</p></div>
-    <div class="card"><div class="ico">👥</div><h3>Browse by person<span class="new">NEW</span></h3><p>Flip the sidebar to <b>People</b>: a directory of speakers built from your meetings. Pick a person to see every recording they took part in.</p></div>
-    <div class="card"><div class="ico">🔄</div><h3>Notion sync</h3><p>One-way <b>Plaud → Notion</b>, incremental (diff by hash). Pushes every note in full and uploads images as persistent Notion files.</p></div>
-    <div class="card"><div class="ico">📄</div><h3>Export to Word</h3><p>Export any note to <b>.docx</b> with its layout and embedded images — generated natively, no dependencies.</p></div>
-    <div class="card"><div class="ico">🌍</div><h3>Localized &amp; themed</h3><p>English, French and Chinese, plus follow-system language. Light, Dark or System appearance.</p></div>
-    <div class="card"><div class="ico">🔒</div><h3>Private by design</h3><p>Read-only on Plaud, Notion token in the Keychain, and <b>no telemetry</b> — nothing leaves your Mac except calls to Plaud and Notion.</p></div>
+    <div class="card"><div class="ico">📂</div><h3><span class="en">Recordings list</span><span class="fr">Liste des enregistrements</span><span class="zh">錄音清單</span></h3><p><span class="en">Every recording, grouped into Today / This week / Earlier, with live search and a local-cache indicator.</span><span class="fr">Tous les enregistrements, groupés en Aujourd'hui / Cette semaine / Avant, avec recherche instantanée et indicateur de cache local.</span><span class="zh">所有錄音，依今天／本週／更早分組，並附即時搜尋與本機快取指示。</span></p></div>
+    <div class="card"><div class="ico">📝</div><h3><span class="en">AI summary &amp; notes</span><span class="fr">Résumé IA et notes</span><span class="zh">AI 摘要與筆記</span></h3><p><span class="en">The AI summary plus <b>all</b> note types via a dropdown — rich Markdown with task checkboxes, tables, and <b>inline images</b> you can save.</span><span class="fr">Le résumé IA plus <b>tous</b> les types de notes via un menu — Markdown riche avec cases à cocher, tableaux et <b>images en ligne</b> que vous pouvez enregistrer.</span><span class="zh">AI 摘要，加上可從下拉選單取用的<b>全部</b>筆記類型——豐富的 Markdown，含任務核取方塊、表格，以及可另存的<b>內嵌圖片</b>。</span></p></div>
+    <div class="card"><div class="ico">🗣️</div><h3><span class="en">Transcription</span><span class="fr">Transcription</span><span class="zh">逐字稿</span></h3><p><span class="en">Three views: <b>Raw</b> (timestamps &amp; speakers), <b>Polished</b>, and an interactive <b>Outline</b> — click a chapter to reveal its transcript.</span><span class="fr">Trois vues : <b>Brut</b> (horodatages et locuteurs), <b>Poli</b>, et un <b>Plan</b> interactif — cliquez un chapitre pour révéler sa transcription.</span><span class="zh">三種檢視：<b>原始</b>（含時間戳與發言者）、<b>潤飾後</b>，以及互動式<b>大綱</b>——點一個章節即可展開該段逐字稿。</span></p></div>
+    <div class="card"><div class="ico">📊</div><h3><span class="en">Speaker stats</span><span class="fr">Statistiques de locuteurs</span><span class="zh">發言者統計</span></h3><p><span class="en">Who spoke and for how long — talk time, percentage and number of interventions, with progress bars.</span><span class="fr">Qui a parlé et combien de temps — temps de parole, pourcentage et nombre d'interventions, avec barres de progression.</span><span class="zh">誰說了話、說了多久——發言時間、百分比與發言次數，並以進度條呈現。</span></p></div>
+    <div class="card"><div class="ico">👥</div><h3><span class="en">Browse by person</span><span class="fr">Parcourir par personne</span><span class="zh">依人物瀏覽</span><span class="new"><span class="en">NEW</span><span class="fr">NOUVEAU</span><span class="zh">新</span></span></h3><p><span class="en">Flip the sidebar to <b>People</b>: a directory of speakers built from your meetings. Pick a person to see every recording they took part in.</span><span class="fr">Basculez la barre latérale sur <b>Personnes</b> : un annuaire de locuteurs construit à partir de vos réunions. Choisissez quelqu'un pour voir tous les enregistrements auxquels il a participé.</span><span class="zh">把側邊欄切換到<b>人物</b>：一份由你的會議建立起來的發言者名錄。選一個人，就能看到他參與過的每一段錄音。</span></p></div>
+    <div class="card"><div class="ico">🔄</div><h3><span class="en">Notion sync</span><span class="fr">Sync Notion</span><span class="zh">Notion 同步</span></h3><p><span class="en">One-way <b>Plaud → Notion</b>, incremental (diff by hash). Pushes every note in full and uploads images as persistent Notion files.</span><span class="fr">Sens unique <b>Plaud → Notion</b>, incrémental (diff par hash). Pousse chaque note en entier et téléverse les images en fichiers Notion persistants.</span><span class="zh">單向 <b>Plaud → Notion</b>，增量同步（以雜湊比對差異）。完整推送每則筆記，並將圖片上傳為 Notion 的持久檔案。</span></p></div>
+    <div class="card"><div class="ico">📄</div><h3><span class="en">Export to Word</span><span class="fr">Export vers Word</span><span class="zh">匯出成 Word</span></h3><p><span class="en">Export any note to <b>.docx</b> with its layout and embedded images — generated natively, no dependencies.</span><span class="fr">Exportez n'importe quelle note en <b>.docx</b> avec sa mise en page et ses images — généré nativement, sans dépendance.</span><span class="zh">可將任何筆記匯出成 <b>.docx</b>，保留版面與內嵌圖片——原生產生，零依賴。</span></p></div>
+    <div class="card"><div class="ico">🌍</div><h3><span class="en">Localized &amp; themed</span><span class="fr">Localisée et thémée</span><span class="zh">多語言與主題</span></h3><p><span class="en">English, French and Chinese, plus follow-system language. Light, Dark or System appearance.</span><span class="fr">Anglais, français et chinois, plus le suivi de la langue système. Apparence claire, sombre ou système.</span><span class="zh">支援英文、法文與中文，也可跟隨系統語言。外觀可選淺色、深色或跟隨系統。</span></p></div>
+    <div class="card"><div class="ico">🔒</div><h3><span class="en">Private by design</span><span class="fr">Privée par conception</span><span class="zh">以隱私為設計前提</span></h3><p><span class="en">Read-only on Plaud, Notion token in the Keychain, and <b>no telemetry</b> — nothing leaves your Mac except calls to Plaud and Notion.</span><span class="fr">Lecture seule sur Plaud, jeton Notion dans le Trousseau, et <b>aucune télémétrie</b> — rien ne quitte votre Mac hormis les appels à Plaud et Notion.</span><span class="zh">對 Plaud 唯讀、Notion 權杖存放在鑰匙圈，而且<b>沒有遙測</b>——除了呼叫 Plaud 與 Notion 之外，沒有任何資料離開你的 Mac。</span></p></div>
   </div>
 </div></section>
 
 <section id="why"><div class="wrap">
   <div class="why">
     <div>
-      <p class="eyebrow">why it exists</p>
-      <h2 style="text-align:left">Made for people who live on a Mac</h2>
-      <p class="lead">Plaud captures your meetings beautifully — but if you want to <b>read, search, archive and reuse</b> that content on macOS, you're stuck switching contexts. Plaud Companion is a featherweight document app that puts every recording, note and transcript one keystroke away, and now lets you pivot the whole library <b>by who was in the room</b>.</p>
+      <p class="eyebrow"><span class="en">why it exists</span><span class="fr">pourquoi elle existe</span><span class="zh">為什麼有這個工具</span></p>
+      <h2 style="text-align:left"><span class="en">Made for people who live on a Mac</span><span class="fr">Faite pour ceux qui vivent sur un Mac</span><span class="zh">為以 Mac 為家的人而做</span></h2>
+      <p class="lead"><span class="en">Plaud captures your meetings beautifully — but if you want to <b>read, search, archive and reuse</b> that content on macOS, you're stuck switching contexts. Plaud Companion is a featherweight document app that puts every recording, note and transcript one keystroke away, and now lets you pivot the whole library <b>by who was in the room</b>.</span><span class="fr">Plaud capture magnifiquement vos réunions — mais si vous voulez <b>lire, chercher, archiver et réutiliser</b> ce contenu sur macOS, vous passez votre temps à changer de contexte. Plaud Companion est une app document plume qui met chaque enregistrement, note et transcription à une touche, et permet désormais de pivoter toute la bibliothèque <b>par qui était dans la pièce</b>.</span><span class="zh">Plaud 把你的會議記錄得很漂亮——但如果你想在 macOS 上<b>閱讀、搜尋、封存與再利用</b>這些內容，就得不停切換情境。Plaud Companion 是一個輕如羽毛的文件應用程式，讓每一段錄音、筆記與逐字稿都只差一個按鍵，現在還能<b>依當時在場的人</b>重新樞紐整個資料庫。</span></p>
     </div>
     <div class="stats">
-      <div class="stat"><div class="k">Read-only</div><div class="v">Never edits your Plaud data</div></div>
-      <div class="stat"><div class="k">Offline</div><div class="v">Local cache for instant reopen</div></div>
-      <div class="stat"><div class="k">EN · FR · ZH</div><div class="v">Three languages built in</div></div>
-      <div class="stat"><div class="k">0</div><div class="v">Trackers &amp; telemetry</div></div>
+      <div class="stat"><div class="k"><span class="en">Read-only</span><span class="fr">Lecture seule</span><span class="zh">唯讀</span></div><div class="v"><span class="en">Never edits your Plaud data</span><span class="fr">Ne modifie jamais vos données Plaud</span><span class="zh">絕不修改你的 Plaud 資料</span></div></div>
+      <div class="stat"><div class="k"><span class="en">Offline</span><span class="fr">Hors ligne</span><span class="zh">離線</span></div><div class="v"><span class="en">Local cache for instant reopen</span><span class="fr">Cache local pour une réouverture instantanée</span><span class="zh">本機快取，重新開啟即時可用</span></div></div>
+      <div class="stat"><div class="k">EN · FR · ZH</div><div class="v"><span class="en">Three languages built in</span><span class="fr">Trois langues intégrées</span><span class="zh">內建三種語言</span></div></div>
+      <div class="stat"><div class="k">0</div><div class="v"><span class="en">Trackers &amp; telemetry</span><span class="fr">Traceurs et télémétrie</span><span class="zh">追蹤器與遙測</span></div></div>
     </div>
   </div>
 </div></section>
 
 <section id="notion"><div class="wrap">
   <div class="center">
-    <p class="eyebrow">how it works</p>
-    <h2>Your voice notes, wherever you work</h2>
-    <p class="lead">Authenticate once with your own Plaud session, read everything on your Mac, and optionally mirror it into Notion — incrementally, so you never re-copy the same note twice.</p>
+    <p class="eyebrow"><span class="en">how it works</span><span class="fr">comment ça marche</span><span class="zh">運作方式</span></p>
+    <h2><span class="en">Your voice notes, wherever you work</span><span class="fr">Vos notes vocales, où que vous travailliez</span><span class="zh">你的語音筆記，跟著你工作的地方走</span></h2>
+    <p class="lead"><span class="en">Authenticate once with your own Plaud session, read everything on your Mac, and optionally mirror it into Notion — incrementally, so you never re-copy the same note twice.</span><span class="fr">Authentifiez-vous une fois avec votre propre session Plaud, lisez tout sur votre Mac, et miroitez-le si vous voulez dans Notion — de façon incrémentale, pour ne jamais recopier deux fois la même note.</span><span class="zh">以你自己的 Plaud 工作階段驗證一次，就能在 Mac 上讀取全部內容，並可選擇鏡射到 Notion——採增量方式，同一則筆記絕不會被重複複製。</span></p>
   </div>
   <div class="flow">
-    <div class="node"><div class="ni">🎙️</div><h3>Plaud API</h3><p>Reads your recordings, notes and transcripts — read-only, with your own token.</p></div>
+    <div class="node"><div class="ni">🎙️</div><h3><span class="en">Plaud API</span><span class="fr">API Plaud</span><span class="zh">Plaud API</span></h3><p><span class="en">Reads your recordings, notes and transcripts — read-only, with your own token.</span><span class="fr">Lit vos enregistrements, notes et transcriptions — en lecture seule, avec votre propre jeton.</span><span class="zh">讀取你的錄音、筆記與逐字稿——唯讀，並使用你自己的權杖。</span></p></div>
     <div class="arrow">→</div>
-    <div class="node"><div class="ni">💻</div><h3>Plaud Companion</h3><p>Native SwiftUI app: browse, read, search, by date or by person. Cached offline.</p></div>
+    <div class="node"><div class="ni">💻</div><h3>Plaud Companion</h3><p><span class="en">Native SwiftUI app: browse, read, search, by date or by person. Cached offline.</span><span class="fr">App SwiftUI native : parcourir, lire, chercher, par date ou par personne. Mise en cache hors ligne.</span><span class="zh">原生 SwiftUI 應用程式：可依日期或人物瀏覽、閱讀與搜尋。離線快取。</span></p></div>
     <div class="arrow">→</div>
-    <div class="node"><div class="ni">🔄</div><h3>Notion</h3><p>Optional one-way sync — database or page, images uploaded, only changes written.</p></div>
+    <div class="node"><div class="ni">🔄</div><h3>Notion</h3><p><span class="en">Optional one-way sync — database or page, images uploaded, only changes written.</span><span class="fr">Sync unidirectionnelle optionnelle — base ou page, images téléversées, seuls les changements sont écrits.</span><span class="zh">可選的單向同步——寫入資料庫或頁面，圖片一併上傳，且只寫入變動的部分。</span></p></div>
   </div>
 </div></section>
 
 <section id="install"><div class="wrap">
   <div class="center">
-    <p class="eyebrow">get started</p>
-    <h2>Up and running in a minute</h2>
-    <p class="lead">No App Store, no sign-up. Notarized by Apple — it launches by double-click, even offline.</p>
+    <p class="eyebrow"><span class="en">get started</span><span class="fr">démarrer</span><span class="zh">開始使用</span></p>
+    <h2><span class="en">Up and running in a minute</span><span class="fr">Opérationnel en une minute</span><span class="zh">一分鐘內開始使用</span></h2>
+    <p class="lead"><span class="en">No App Store, no sign-up. Notarized by Apple — it launches by double-click, even offline.</span><span class="fr">Pas d'App Store, pas d'inscription. Notariée par Apple — elle se lance d'un double-clic, même hors ligne.</span><span class="zh">不需 App Store，也不需註冊。已通過 Apple 公證——即使離線，按兩下也能啟動。</span></p>
   </div>
   <div class="steps">
-    <div class="step"><h3>Download</h3><p>Grab the latest signed <code>.dmg</code> from GitHub Releases and drag <b>Plaud&nbsp;Companion</b> into <code>/Applications</code>.</p></div>
-    <div class="step"><h3>Authenticate</h3><p>The app reuses your Plaud session from <code>~/.plaud/tokens-mcp.json</code> (created via the Plaud MCP <code>login</code>). Paste it in Settings if needed.</p></div>
-    <div class="step"><h3>Browse</h3><p>Your recordings appear instantly. Switch to <b>People</b> to explore them by speaker, or open <b>Settings → Notion</b> to sync.</p></div>
+    <div class="step"><h3><span class="en">Download</span><span class="fr">Télécharger</span><span class="zh">下載</span></h3><p><span class="en">Grab the latest signed <code>.dmg</code> from GitHub Releases and drag <b>Plaud&nbsp;Companion</b> into <code>/Applications</code>.</span><span class="fr">Récupérez le dernier <code>.dmg</code> signé depuis GitHub Releases et glissez <b>Plaud&nbsp;Companion</b> dans <code>/Applications</code>.</span><span class="zh">從 GitHub Releases 取得最新的已簽章 <code>.dmg</code>，並把 <b>Plaud&nbsp;Companion</b> 拖入 <code>/Applications</code>。</span></p></div>
+    <div class="step"><h3><span class="en">Authenticate</span><span class="fr">S'authentifier</span><span class="zh">驗證</span></h3><p><span class="en">The app reuses your Plaud session from <code>~/.plaud/tokens-mcp.json</code> (created via the Plaud MCP <code>login</code>). Paste it in Settings if needed.</span><span class="fr">L'app réutilise votre session Plaud depuis <code>~/.plaud/tokens-mcp.json</code> (créée par le <code>login</code> du MCP Plaud). Collez-la dans les Réglages si besoin.</span><span class="zh">應用程式會沿用 <code>~/.plaud/tokens-mcp.json</code> 中的 Plaud 工作階段（由 Plaud MCP 的 <code>login</code> 建立）。必要時可在設定中貼上。</span></p></div>
+    <div class="step"><h3><span class="en">Browse</span><span class="fr">Parcourir</span><span class="zh">瀏覽</span></h3><p><span class="en">Your recordings appear instantly. Switch to <b>People</b> to explore them by speaker, or open <b>Settings → Notion</b> to sync.</span><span class="fr">Vos enregistrements apparaissent instantanément. Basculez sur <b>Personnes</b> pour les explorer par locuteur, ou ouvrez <b>Réglages → Notion</b> pour synchroniser.</span><span class="zh">你的錄音會立刻出現。切換到<b>人物</b>即可依發言者瀏覽，或開啟<b>設定 → Notion</b> 進行同步。</span></p></div>
   </div>
   <div class="note">
     <b>Authentication.</b> Plaud Companion never asks for your Plaud password — it reuses the OAuth session created by the <a href="https://www.npmjs.com/package/@plaud-ai/mcp" style="color:var(--accent);font-weight:600">Plaud MCP server</a> and refreshes it automatically. Speaker labels come from Plaud's diarization; rename speakers in Plaud and hit <b>Refresh</b> to get real names everywhere — including the People directory.
@@ -268,20 +284,48 @@
 </div></section>
 
 <section class="final"><div class="wrap">
-  <p class="eyebrow">ready?</p>
-  <h2>Bring your Plaud notes home to macOS</h2>
-  <p class="lead" style="margin:0 auto 6px">Free, open-source, signed &amp; notarized. macOS 14 Sonoma or later.</p>
+  <p class="eyebrow"><span class="en">ready?</span><span class="fr">prêt ?</span><span class="zh">準備好了嗎？</span></p>
+  <h2><span class="en">Bring your Plaud notes home to macOS</span><span class="fr">Ramenez vos notes Plaud sur macOS</span><span class="zh">把你的 Plaud 筆記帶回 macOS</span></h2>
+  <p class="lead" style="margin:0 auto 6px"><span class="en">Free, open-source, signed &amp; notarized. macOS 14 Sonoma or later.</span><span class="fr">Gratuite, open source, signée et notariée. macOS 14 Sonoma ou ultérieur.</span><span class="zh">免費、開源、已簽章與公證。macOS 14 Sonoma 或以上版本。</span></p>
   <div class="cta">
-    <a class="btn btn-primary" href="https://github.com/vincentlauriat/plaud-companion/releases/latest">⬇︎ Download for macOS</a>
-    <a class="btn btn-ghost" href="https://github.com/vincentlauriat/plaud-companion#readme">Read the docs</a>
+    <a class="btn btn-primary" href="https://github.com/vincentlauriat/plaud-companion/releases/latest">⬇︎ <span class="en">Download for macOS</span><span class="fr">Télécharger pour macOS</span><span class="zh">下載 macOS 版</span></a>
+    <a class="btn btn-ghost" href="https://github.com/vincentlauriat/plaud-companion#readme"><span class="en">Read the docs</span><span class="fr">Lire la doc</span><span class="zh">閱讀說明文件</span></a>
   </div>
 </div></section>
 
 <footer><div class="wrap">
-  Plaud Companion · MIT License · © 2026 Vincent Lauriat ·
+  Plaud Companion · <span class="en">MIT License</span><span class="fr">Licence MIT</span><span class="zh">MIT 授權</span> · © 2026 Vincent Lauriat ·
   <a href="https://github.com/vincentlauriat/plaud-companion">github.com/vincentlauriat/plaud-companion</a>
-  <div class="disclaimer">Unofficial third-party app · not affiliated with, endorsed by, or supported by Plaud.</div>
+  <div class="disclaimer"><span class="en">Unofficial third-party app · not affiliated with, endorsed by, or supported by Plaud.</span><span class="fr">App tierce non officielle · sans affiliation, approbation ni support de Plaud.</span><span class="zh">非官方第三方應用程式 · 與 Plaud 無隸屬關係，亦未獲其背書或支援。</span></div>
 </div></footer>
 
+<script>
+  /* zh-Hant et non zh : sur un système configuré en chinois simplifié, un
+     simple `zh` laisse le navigateur choisir une fonte Han simplifiée, qui
+     rend certains caractères traditionnels dans la mauvaise forme. */
+  var LANG_TAG={en:'en',fr:'fr',zh:'zh-Hant'};
+  function setLang(l){
+    if(!LANG_TAG[l]) l='en';
+    document.body.classList.remove('lang-en','lang-fr','lang-zh');
+    document.body.classList.add('lang-'+l);
+    document.documentElement.lang=LANG_TAG[l];
+    /* On boucle sur les boutons au lieu de les nommer un par un : ajouter une
+       4e langue ne demandera alors aucune retouche de ce script. */
+    document.querySelectorAll('.langtog button').forEach(function(b){
+      var on=b.dataset.lang===l;
+      b.classList.toggle('on',on);
+      b.setAttribute('aria-pressed',on?'true':'false');
+    });
+    try{localStorage.setItem('vl-lang',l)}catch(e){}
+  }
+  (function(){
+    var saved;try{saved=localStorage.getItem('vl-lang')}catch(e){}
+    var n=(navigator.language||'en').slice(0,2).toLowerCase();
+    /* Le traditionnel est servi a tout visiteur sinophone, y compris zh-CN :
+       c'est la seule variante chinoise disponible, et la renvoyer vaut mieux
+       que de rabattre ce visiteur sur l'anglais. */
+    setLang(saved||(n==='zh'?'zh':(n==='fr'?'fr':'en')));
+  })();
+</script>
 </body>
 </html>
