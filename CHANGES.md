@@ -1,5 +1,39 @@
 # CHANGES
 
+## 2026-07-27 — Réparation du dépôt git + rangement des artefacts de release
+
+### Fixed
+- **`git fetch` réparé.** 266 fichiers au suffixe « 2 » (collision de renommage type Finder/synchro)
+  s'étaient glissés **dans `.git/`**, dont des refs loose au nom invalide
+  (`refs/heads/docs/landing-followup 2`, `refs/tags/v1.0.0 2`, …) qui faisaient échouer tout fetch avec
+  `fatal: bad object`. Ces copies étaient des snapshots **périmés** (elles pointaient sur `7d3ad76` alors
+  que `main` est à `bf06f8b`) et leur nom ne pouvait de toute façon être résolu par git ; les refs
+  authoritatives (loose + `packed-refs`) n'ont pas été touchées. Supprimés après sauvegarde de `.git`.
+  Vérification : `git rev-parse HEAD main origin/main` **identique avant/après** (`bf06f8b`),
+  `git fsck` silencieux, `git branch -a` complet (10 branches), et `git fetch --tags origin` passe
+  désormais → récupère `v1.0.1` et `v1.1.0`, jusque-là absents en local.
+
+### Changed
+- **Artefacts de release rangés** : les 3 DMG (1.0.0, 1.0.1, 1.1.0) déplacés de la racine du repo vers
+  `release/`, conformément à la règle globale. Les 3 doublons « 2 » correspondants supprimés après
+  vérification `shasum -a 256` (octet pour octet identiques aux originaux).
+- `.gitignore` **inchangé** : la règle `*.dmg` (ligne 19, sans slash initial) couvre déjà `release/`
+  — vérifié avec `git check-ignore -v`.
+
+## 2026-07-27 — Installation locale v1.1.0 + corrections de doc
+
+### Changed
+- `/Applications/Plaud Companion.app` : installée depuis `PlaudCompanion-1.1.0.dmg`
+  (`stapler validate` OK, `spctl` → `accepted / source=Notarized Developer ID`). L'app officielle de
+  l'éditeur `/Applications/Plaud.app` (`ai.plaud.desktop.plaud`) n'a **pas** été touchée.
+
+### Docs
+- `MEMORY.md` : nom de l'app corrigé « Plaud Compagnion » → « **Plaud Companion** » (3 occurrences,
+  dont la commande `killall`). `project.yml` et l'`Info.plist` du bundle 1.1.0 font foi.
+- `MEMORY.md` : nouvelle décision structurante sur la **cohabitation avec l'app officielle Plaud**
+  — dossier `~/Library/Application Support/Plaud/` partagé, `clearAll()` ne supprime que `Plaud/cache`
+  (vérifié `PlaudCache.swift:83-88`), donc « Vider le cache » ne casse pas la session de l'app officielle.
+
 ## 2026-07-04 — v1.1.0 — Retrouver les notes par personne (annuaire d'interlocuteurs)
 _Branche `feat/people-index` → mergée dans `main`. PLAN.md Phase 10. Release DMG signé + notarisé v1.1.0._
 
