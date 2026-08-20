@@ -25,6 +25,13 @@ enum PlaudError: LocalizedError {
     }
 }
 
+/// Photographie de l'état du token pour l'UI des Réglages (sans déclencher de refresh).
+struct PlaudTokenInfo: Sendable {
+    let expiresAt: Date?
+    let hasRefreshToken: Bool
+    let isExpired: Bool
+}
+
 actor TokenStore {
     static let shared = TokenStore()
 
@@ -68,6 +75,16 @@ actor TokenStore {
     /// `true` si un fichier de token valide est présent (décodable).
     func hasToken() -> Bool {
         (try? load()) != nil
+    }
+
+    /// État courant du token pour affichage, ou `nil` si aucun fichier valide.
+    func tokenInfo() -> PlaudTokenInfo? {
+        guard let tokens = try? load() else { return nil }
+        return PlaudTokenInfo(
+            expiresAt: tokens.expiresAt.map { Date(timeIntervalSince1970: $0 / 1000) },
+            hasRefreshToken: tokens.refreshToken != nil,
+            isExpired: tokens.isExpired
+        )
     }
 
     /// Importe un token collé par l'utilisateur (contenu de `tokens-mcp.json`).

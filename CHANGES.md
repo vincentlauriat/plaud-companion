@@ -1,5 +1,27 @@
 # CHANGES
 
+## 2026-08-20 — Reconnexion Plaud (token expiré)
+
+### Added
+- **Réglages → section « Compte Plaud »** (macOS, en tête du formulaire) : pastille d'état du token
+  `~/.plaud/tokens-mcp.json` (vert connecté / orange expiré-renouvelable / rouge expiré ou absent),
+  date d'expiration localisée, bouton « Renouveler le token » (`TokenStore.forceRefresh()`), et aide
+  expliquant la reconnexion complète via le login MCP Plaud dans Claude Code. Le même bloc d'état
+  apparaît en tête de la section « Authentification Plaud » sur iOS (au-dessus du collage de token).
+  Nouveau `TokenStore.tokenInfo()` (+ `PlaudTokenInfo`) pour exposer l'état sans déclencher de refresh ;
+  9 clés i18n ajoutées en fr/en/zh ; fenêtre Réglages macOS 520 → 640 pt. Builds Debug macOS + iOS verts.
+
+### Fixed
+- **Session Plaud reconnectée.** Le token `~/.plaud/tokens-mcp.json` avait expiré le 2026-07-28 ;
+  l'app Plaud Companion ne pouvait plus rafraîchir. Reconnexion via le login MCP Plaud
+  (`mcp__plaud__login`, OAuth navigateur) → nouveau token valide jusqu'au 2026-08-21.
+  Aucun changement de code : sur macOS la connexion Plaud passe par ce fichier, par design
+  (seuls les Réglages Notion sont dans l'app).
+
+### Docs
+- `TODOS.md` : idée ajoutée — section « Compte Plaud » dans les Réglages macOS (état du token
+  + reconnexion guidée), pour rendre visible une expiration au lieu d'un échec silencieux.
+
 ## 2026-07-27 — Réparation du dépôt git + rangement des artefacts de release
 
 ### Fixed
