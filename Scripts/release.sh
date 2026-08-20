@@ -1,6 +1,21 @@
 #!/usr/bin/env bash
-# Build → sign (Developer ID + Hardened Runtime) → DMG → notarize → staple.
-# Adapted from the MarkdownViewer release pipeline (without Sparkle auto-update).
+# Build → sign (Developer ID + Hardened Runtime) → DMG → notarize → staple
+# → Sparkle EdDSA sign → appcast.xml. Adapted from the MarkdownViewer pipeline.
+#
+# ┌──────────────────────────────────────────────────────────────────────────┐
+# │ SPARKLE SIGNING KEY — DO NOT REGENERATE                                  │
+# │                                                                          │
+# │ Updates are EdDSA-signed with the private key in the login keychain      │
+# │ under account "PlaudCompanion" (used by sign_update below). Its public   │
+# │ half is embedded in the app as SUPublicEDKey in project.yml:             │
+# │     ZnGc6Y+TEvjSxkaf3WkQc5YHIZv31qMP/VyNSL15s8w=                         │
+# │                                                                          │
+# │ NEVER run `generate_keys` again for this account and NEVER change        │
+# │ SUPublicEDKey: every already-installed app would reject all future       │
+# │ auto-updates (this happened once on MarkdownViewer). Back the key up:    │
+# │     .sparkle-tools/bin/generate_keys -x backup.txt --account PlaudCompanion │
+# │ and store backup.txt somewhere safe, outside the repo.                   │
+# └──────────────────────────────────────────────────────────────────────────┘
 #
 # Usage:   ./Scripts/release.sh <version>
 # Example: ./Scripts/release.sh 1.0.0
@@ -28,7 +43,9 @@ APP_NAME="Plaud Companion"
 SCHEME="Plaud"
 PROJECT="Plaud.xcodeproj"
 DMG_VOLNAME="$APP_NAME $VERSION"
-DMG="$ROOT/PlaudCompanion-$VERSION.dmg"
+RELEASE_DIR="$ROOT/release"
+mkdir -p "$RELEASE_DIR"
+DMG="$RELEASE_DIR/PlaudCompanion-$VERSION.dmg"
 SIGNING_IDENTITY="${SIGNING_IDENTITY:-Developer ID Application: Vincent LAURIAT (KFLACS69T9)}"
 NOTARY_PROFILE="${NOTARY_PROFILE:-AppliMacVincentGithub}"
 BUILD_NUMBER="$(git rev-list --count HEAD 2>/dev/null || echo 1)"
@@ -69,6 +86,17 @@ codesign_ts() {
   echo "✗ codesign failed for $target" >&2
   return 1
 }
+echo "▶︎ codesign Sparkle.framework nested binaries (deepest first)"
+SPARKLE_FW="$STAGING/Contents/Frameworks/Sparkle.framework"
+if [ -d "$SPARKLE_FW" ]; then
+  SPARKLE_VER="$SPARKLE_FW/Versions/B"
+  codesign_ts "$SPARKLE_VER/Autoupdate"
+  codesign_ts "$SPARKLE_VER/XPCServices/Downloader.xpc"
+  codesign_ts "$SPARKLE_VER/XPCServices/Installer.xpc"
+  codesign_ts "$SPARKLE_VER/Updater.app"
+  codesign_ts "$SPARKLE_FW"
+fi
+
 echo "▶︎ codesign (Developer ID, Hardened Runtime)"
 codesign_ts "$STAGING"
 codesign --verify --strict --deep --verbose=1 "$STAGING"
@@ -127,9 +155,57 @@ echo "▶︎ staple"
 xcrun stapler staple "$DMG"
 xcrun stapler validate "$DMG"
 
+# 7. Sparkle: EdDSA-sign the DMG and write appcast.xml so installed apps
+#    are offered this version on their next update check.
+SPARKLE_VERSION="2.9.1"
+SPARKLE_TOOLS="$ROOT/.sparkle-tools"
+if [ ! -x "$SPARKLE_TOOLS/bin/sign_update" ]; then
+  echo "▶︎ fetching Sparkle $SPARKLE_VERSION tools (one-time setup)"
+  mkdir -p "$SPARKLE_TOOLS"
+  curl -fsSL "https://github.com/sparkle-project/Sparkle/releases/download/$SPARKLE_VERSION/Sparkle-$SPARKLE_VERSION.tar.xz" \
+    | tar -xJ -C "$SPARKLE_TOOLS"
+fi
+
+echo "▶︎ Sparkle EdDSA signature"
+# sign_update prints: sparkle:edSignature="..." length="<bytes>" — used verbatim
+# on the <enclosure> (so no separate length= attribute of our own).
+SPARKLE_SIG_LINE="$("$SPARKLE_TOOLS/bin/sign_update" --account "PlaudCompanion" "$DMG")"
+
+# Sparkle compares <sparkle:version> to the installed app's CFBundleVersion
+# (build number), not the marketing version — use the one baked into the .app.
+APP_BUILD="$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$APP/Contents/Info.plist")"
+
+echo "▶︎ writing appcast.xml (sparkle:version=$APP_BUILD, shortVersionString=$VERSION)"
+PUB_DATE="$(date -R)"
+cat > "$ROOT/appcast.xml" <<APPCAST
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+  <channel>
+    <title>Plaud Companion</title>
+    <link>https://raw.githubusercontent.com/vincentlauriat/plaud-companion/main/appcast.xml</link>
+    <description>Plaud Companion release feed</description>
+    <language>en</language>
+    <item>
+      <title>v$VERSION</title>
+      <pubDate>$PUB_DATE</pubDate>
+      <sparkle:version>$APP_BUILD</sparkle:version>
+      <sparkle:shortVersionString>$VERSION</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:releaseNotesLink>https://github.com/vincentlauriat/plaud-companion/releases/tag/v$VERSION</sparkle:releaseNotesLink>
+      <enclosure
+        url="https://github.com/vincentlauriat/plaud-companion/releases/download/v$VERSION/PlaudCompanion-$VERSION.dmg"
+        type="application/octet-stream"
+        $SPARKLE_SIG_LINE />
+    </item>
+  </channel>
+</rss>
+APPCAST
+
 SIZE="$(du -h "$DMG" | cut -f1 | tr -d ' ')"
 echo
-echo "✅ Built, signed, notarized & stapled: $(basename "$DMG") ($SIZE)"
+echo "✅ Built, signed, notarized, stapled & Sparkle-signed: $(basename "$DMG") ($SIZE)"
+echo "✅ appcast.xml written for v$VERSION"
 echo
-echo "Publish on GitHub:"
-echo "  gh release create v$VERSION \"$DMG\" --title \"v$VERSION\" --generate-notes"
+echo "Publish on GitHub (both steps required for auto-update):"
+echo "  1. gh release create v$VERSION \"$DMG\" --title \"v$VERSION\" --notes-file release/release-notes-$VERSION.md"
+echo "  2. git add appcast.xml && git commit -m 'docs: appcast for v$VERSION' && git push"
