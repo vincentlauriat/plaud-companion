@@ -99,8 +99,9 @@ NotionSyncService ──┬─ état: notion-sync.json (recordingID → {pageID,
 
 ## Release (DMG + notarisation)
 
-- `Scripts/release.sh <version>` : `xcodegen` → build Release (`CODE_SIGNING_ALLOWED=NO`) → codesign **Developer ID + Hardened Runtime** (`--options runtime --timestamp`) → DMG (layout Finder + `Scripts/make-dmg-background.swift`, `hdiutil` UDRW→UDZO) → `notarytool submit --wait` → `stapler staple`.
-- Pas de Sparkle (pas d'auto-update). Versioning : `MARKETING_VERSION` (arg) + `CURRENT_PROJECT_VERSION` (nb de commits git) injectés au build, lus par `Info.plist` via `$(…)`.
+- `Scripts/release.sh <version>` : `xcodegen` → build Release (`CODE_SIGNING_ALLOWED=NO`) → codesign des binaires imbriqués de Sparkle.framework puis **Developer ID + Hardened Runtime** (`--options runtime --timestamp`) → DMG dans `release/` (layout Finder + `Scripts/make-dmg-background.swift`, `hdiutil` UDRW→UDZO) → `notarytool submit --wait` → `stapler staple` → signature EdDSA du DMG (`sign_update`) → génération d'`appcast.xml` à la racine.
+- **Sparkle 2.9.1 (auto-update, macOS uniquement)** : package SPM lié à la seule cible `Plaud` ; `SPUStandardUpdaterController` démarré dans `PlaudApp.swift` (check auto quotidien, jamais de téléchargement/installation silencieux) + menu « Rechercher les mises à jour… ». Feed : `SUFeedURL` → `appcast.xml` raw sur `main` ; intégrité : `SUPublicEDKey` embarquée, clé privée dans le trousseau login (compte `PlaudCompanion` — ne jamais régénérer, cf. en-tête de `Scripts/release.sh`). Après chaque release : publier le DMG sur GitHub Releases **et** commiter l'appcast régénéré.
+- Versioning : `MARKETING_VERSION` (arg) + `CURRENT_PROJECT_VERSION` (nb de commits git) injectés au build, lus par `Info.plist` via `$(…)` ; l'appcast utilise `CFBundleVersion` comme `sparkle:version` (comparaison Sparkle sur le build number, pas la version marketing).
 - Détails et prérequis : voir `RELEASE.md`.
 
 ## Build

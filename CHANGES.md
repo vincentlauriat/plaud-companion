@@ -1,5 +1,29 @@
 # CHANGES
 
+## 2026-08-20 — Sparkle auto-update
+
+### Added
+- **Sparkle 2.9.1 (auto-update) sur la cible macOS** : package SPM lié à la cible `Plaud` uniquement
+  (rien sur iOS), `SPUStandardUpdaterController` démarré au lancement (check automatique quotidien,
+  téléchargement/installation jamais silencieux), entrée de menu « Rechercher les mises à jour… »
+  (app menu, i18n fr/en/zh). Info.plist : `SUFeedURL` →
+  `https://raw.githubusercontent.com/vincentlauriat/plaud-companion/main/appcast.xml`,
+  `SUPublicEDKey` `ZnGc6Y+TEvjSxkaf3WkQc5YHIZv31qMP/VyNSL15s8w=` (paire EdDSA générée, privée dans
+  le trousseau sous le compte `PlaudCompanion` — **ne jamais régénérer**, avertissement en tête de
+  `Scripts/release.sh`).
+- **`Scripts/release.sh` étendu** : signature des binaires imbriqués de Sparkle.framework (XPC,
+  Autoupdate, Updater.app) avant l'app, signature EdDSA du DMG (`sign_update`), génération
+  d'`appcast.xml` à la racine (sparkle:version = CFBundleVersion du build), téléchargement
+  automatique des outils Sparkle dans `.sparkle-tools/` (gitignoré).
+
+### Fixed
+- Le DMG de release est maintenant écrit dans `release/` (convention DevApps) au lieu de la racine.
+
+### Notes
+- L'auto-update ne sera actif qu'à partir de la **prochaine release** (l'appcast n'existe pas encore
+  et la 1.1.0 installée n'embarque pas Sparkle) : publier une 1.2.0 pour amorcer le cycle, puis
+  commiter l'appcast généré.
+
 ## 2026-08-20 — Reconnexion Plaud (token expiré)
 
 ### Added
