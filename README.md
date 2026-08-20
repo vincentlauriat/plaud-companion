@@ -126,6 +126,10 @@ A **signed & notarized** `.dmg` is published on the [**Releases**](https://githu
 2. Open it and drag **Plaud Companion** into your `Applications` folder.
 3. Launch it normally — because the app is notarized by Apple, Gatekeeper opens it without warnings.
 
+Starting with **v1.2.0**, the app updates itself: it checks for new releases daily (Sparkle) and
+offers them in place — installs always require your confirmation. You can also trigger a check via
+**Plaud Companion → Check for Updates…**.
+
 > _Maintainers: see [`RELEASE.md`](RELEASE.md) for the signing/notarization pipeline._
 
 ### Option B — Build from source
@@ -285,6 +289,7 @@ plaud-companion/
 - [x] Push **full note content + images** to Notion (persistent file uploads)
 - [x] **Browse recordings by person** (People directory from speaker diarization)
 - [x] Prebuilt signed `.dmg` on the Releases page
+- [x] **Automatic updates** (Sparkle 2, EdDSA-signed appcast) + Plaud account status in Settings
 - [ ] Cache raw transcription & outline (currently re‑fetched per open)
 - [ ] Built‑in audio player synced to transcript timestamps
 - [ ] Export a recording to Markdown / PDF
