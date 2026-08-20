@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+  <channel>
+    <title>Plaud Companion</title>
+    <link>https://raw.githubusercontent.com/vincentlauriat/plaud-companion/main/appcast.xml</link>
+    <description>Plaud Companion release feed</description>
+    <language>en</language>
+    <item>
+      <title>v1.2.0</title>
+      <pubDate>Thu, 20 Aug 2026 16:36:55 +0200</pubDate>
+      <sparkle:version>32</sparkle:version>
+      <sparkle:shortVersionString>1.2.0</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:releaseNotesLink>https://github.com/vincentlauriat/plaud-companion/releases/tag/v1.2.0</sparkle:releaseNotesLink>
+      <enclosure
+        url="https://github.com/vincentlauriat/plaud-companion/releases/download/v1.2.0/PlaudCompanion-1.2.0.dmg"
+        type="application/octet-stream"
+        sparkle:edSignature="+PMw91CZdHWD7NXH5c+rSDFYKrCaWkPIsOGsk5olK4kXpth7D7xPplzwide96newOG6aqpykrXOLTt5mgMIXDQ==" length="2132962" />
+    </item>
+  </channel>
+</rss>
