@@ -1,5 +1,17 @@
 # CHANGES
 
+## 2026-08-20 — Release v1.2.0 (première avec auto-update)
+
+### Released
+- **v1.2.0** publiée : bump `MARKETING_VERSION` 1.1.0 → 1.2.0, pipeline complet
+  (`Scripts/release.sh 1.2.0` : build 32, sign Developer ID + Hardened Runtime, DMG 2,0 Mo dans
+  `release/`, notarisation Apple **Accepted**, staple validé, signature EdDSA Sparkle, `appcast.xml`
+  généré). Vérification indépendante sur le DMG monté : `spctl` accepted / Notarized Developer ID,
+  `codesign --verify --deep --strict` OK. GitHub Release
+  [v1.2.0](https://github.com/vincentlauriat/plaud-companion/releases/tag/v1.2.0) + appcast commité
+  sur `main` (flux vérifié en ligne via raw.githubusercontent.com). App 1.2.0 installée dans
+  `/Applications` (dernier téléchargement manuel — les suivantes passeront par Sparkle).
+
 ## 2026-08-20 — Sparkle auto-update
 
 ### Added
