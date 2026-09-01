@@ -1,5 +1,22 @@
 # CHANGES
 
+## 2026-09-01 — Reconnexion Plaud (token expiré) + durée de vie des tokens documentée
+
+### Fixed
+- **Session Plaud reconnectée** : `~/.plaud/tokens-mcp.json` était périmé de bout en bout —
+  `access_token` expiré le 2026-08-21, `refresh_token` expiré le **2026-08-27**. Une fois le refresh
+  token expiré, `TokenStore.refresh()` n'a plus aucun recours (le POST `/oauth/.../refresh` échoue) :
+  ni le rafraîchissement automatique, ni le bouton « Renouveler le token » des Réglages ne peuvent
+  rétablir la session. Reconnexion par `login` MCP Plaud (OAuth navigateur), qui réécrit le fichier.
+
+### Decisions
+- **Durée de vie des tokens Plaud mesurée (décodage des `exp` JWT)** : access token **24 h**,
+  refresh token **7 jours** glissants depuis l'émission. Conséquence : l'app se rafraîchit toute
+  seule tant qu'elle est utilisée au moins une fois par semaine ; au-delà, un login MCP est
+  **obligatoire** et aucune UI de l'app ne peut y suppléer. Diagnostic à faire en local (décoder
+  `exp` des deux JWT) plutôt qu'en appelant l'endpoint de refresh — un appel manuel consommerait
+  le refresh token en cas de rotation côté serveur.
+
 ## 2026-08-20 — Release v1.2.0 (première avec auto-update)
 
 ### Released
