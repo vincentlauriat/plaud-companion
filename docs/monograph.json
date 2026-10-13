@@ -1,0 +1,164 @@
+{
+  "name": "Plaud Companion",
+  "no": "26",
+  "repo": "vincentlauriat/plaud-companion",
+  "url": "https://vincentlauriat.github.io/plaud-companion/",
+  "accent": "#f5731f",
+  "meta": {
+    "title": "Plaud Companion — Read, search & sync your Plaud notes on macOS",
+    "description": "A fast, native macOS app to browse, read and search your Plaud voice-recording notes — AI summaries, rich notes, transcriptions, speaker stats, browse by person, and one-way incremental Notion sync. Free & open-source (MIT), signed & notarized.",
+    "favicon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23f5731f'/%3E%3Cg stroke='white' stroke-width='7' stroke-linecap='round'%3E%3Cline x1='30' y1='42' x2='30' y2='58'/%3E%3Cline x1='43' y1='32' x2='43' y2='68'/%3E%3Cline x1='57' y1='24' x2='57' y2='76'/%3E%3Cline x1='70' y1='38' x2='70' y2='62'/%3E%3C/g%3E%3C/svg%3E"
+  },
+  "role": {"en": "Voice notes", "fr": "Notes vocales", "zh": "語音筆記"},
+  "thesis": {
+    "en": "Your Plaud recordings, native on macOS.",
+    "fr": "Vos enregistrements Plaud, nativement sur macOS.",
+    "zh": "你的 Plaud 錄音，在 macOS 上原生呈現。"
+  },
+  "lede": {
+    "en": "Browse, read and search your Plaud voice-recording notes — AI summaries, rich notes, transcriptions and speaker stats — <b>now by person too</b>. And push everything to Notion, one way, only what changed.",
+    "fr": "Parcourez, lisez et cherchez vos notes d'enregistrements Plaud — résumés IA, notes riches, transcriptions et statistiques de locuteurs — <b>désormais par personne aussi</b>. Et poussez tout vers Notion, dans un seul sens, uniquement ce qui a changé.",
+    "zh": "瀏覽、閱讀並搜尋你的 Plaud 錄音筆記——AI 摘要、豐富筆記、逐字稿與發言者統計——<b>現在也能依人物檢視</b>。並可單向推送到 Notion，只同步變動的部分。"
+  },
+  "actions": [
+    {"primary": true, "href": "https://github.com/vincentlauriat/plaud-companion/releases/latest",
+     "label": {"en": "Download for macOS", "fr": "Télécharger pour macOS", "zh": "下載 macOS 版"}},
+    {"href": "https://github.com/vincentlauriat/plaud-companion",
+     "label": {"en": "View on GitHub", "fr": "Voir sur GitHub", "zh": "在 GitHub 上檢視"}}
+  ],
+  "facts": [
+    {"k": {"en": "Requires", "fr": "Configuration", "zh": "系統需求"}, "v": "macOS 14+"},
+    {"k": {"en": "Distribution", "fr": "Distribution", "zh": "發行"},
+     "v": {"en": "Signed &amp; notarized", "fr": "Signé et notarié", "zh": "已簽章與公證"}},
+    {"k": {"en": "Access", "fr": "Accès", "zh": "存取"},
+     "v": {"en": "Read-only on Plaud", "fr": "Lecture seule sur Plaud", "zh": "對 Plaud 唯讀"}},
+    {"k": {"en": "Licence", "fr": "Licence", "zh": "授權"},
+     "v": {"en": "Free &amp; open-source (MIT)", "fr": "Gratuit et open source (MIT)", "zh": "免費開源（MIT）"}}
+  ],
+  "opener": {
+    "h": {"en": "Everything from Plaud — read, searched and reused on your Mac",
+          "fr": "Tout ce qui vient de Plaud — lu, cherché et réutilisé sur votre Mac",
+          "zh": "Plaud 的一切——在你的 Mac 上閱讀、搜尋、再利用"},
+    "p": {"en": "A small, fast, native SwiftUI app. It talks to Plaud's official third-party API, read-only, and caches locally so reopening is instant and works offline.",
+          "fr": "Une app SwiftUI native, petite et rapide. Elle parle à l'API tierce officielle de Plaud, en lecture seule, et met en cache localement pour une réouverture instantanée, même hors ligne.",
+          "zh": "小巧快速的原生 SwiftUI 應用程式。它以唯讀方式呼叫 Plaud 官方的第三方 API，並在本機快取，因此重新開啟時即時可用，離線也能運作。"}
+  },
+  "features": [
+    {"h": {"en": "Recordings list", "fr": "Liste des enregistrements", "zh": "錄音清單"},
+     "p": {"en": "Every recording, grouped into Today / This week / Earlier, with live search and a local-cache indicator.",
+           "fr": "Tous les enregistrements, groupés en Aujourd'hui / Cette semaine / Avant, avec recherche instantanée et indicateur de cache local.",
+           "zh": "所有錄音，依今天／本週／更早分組，並附即時搜尋與本機快取指示。"}},
+    {"h": {"en": "AI summary &amp; notes", "fr": "Résumé IA et notes", "zh": "AI 摘要與筆記"},
+     "p": {"en": "The AI summary plus <b>all</b> note types via a dropdown — rich Markdown with task checkboxes, tables, and <b>inline images</b> you can save.",
+           "fr": "Le résumé IA plus <b>tous</b> les types de notes via un menu — Markdown riche avec cases à cocher, tableaux et <b>images en ligne</b> que vous pouvez enregistrer.",
+           "zh": "AI 摘要，加上可從下拉選單取用的<b>全部</b>筆記類型——豐富的 Markdown，含任務核取方塊、表格，以及可另存的<b>內嵌圖片</b>。"}},
+    {"h": {"en": "Transcription", "fr": "Transcription", "zh": "逐字稿"},
+     "p": {"en": "Three views: <b>Raw</b> (timestamps &amp; speakers), <b>Polished</b>, and an interactive <b>Outline</b> — click a chapter to reveal its transcript.",
+           "fr": "Trois vues : <b>Brut</b> (horodatages et locuteurs), <b>Poli</b>, et un <b>Plan</b> interactif — cliquez un chapitre pour révéler sa transcription.",
+           "zh": "三種檢視：<b>原始</b>（含時間戳與發言者）、<b>潤飾後</b>，以及互動式<b>大綱</b>——點一個章節即可展開該段逐字稿。"}},
+    {"h": {"en": "Speaker stats", "fr": "Statistiques de locuteurs", "zh": "發言者統計"},
+     "p": {"en": "Who spoke and for how long — talk time, percentage and number of interventions, with progress bars.",
+           "fr": "Qui a parlé et combien de temps — temps de parole, pourcentage et nombre d'interventions, avec barres de progression.",
+           "zh": "誰說了話、說了多久——發言時間、百分比與發言次數，並以進度條呈現。"}},
+    {"h": {"en": "Browse by person", "fr": "Parcourir par personne", "zh": "依人物瀏覽"},
+     "p": {"en": "Flip the sidebar to <b>People</b>: a directory of speakers built from your meetings. Pick a person to see every recording they took part in.",
+           "fr": "Basculez la barre latérale sur <b>Personnes</b> : un annuaire de locuteurs construit à partir de vos réunions. Choisissez quelqu'un pour voir tous les enregistrements auxquels il a participé.",
+           "zh": "把側邊欄切換到<b>人物</b>：一份由你的會議建立起來的發言者名錄。選一個人，就能看到他參與過的每一段錄音。"}},
+    {"h": {"en": "Notion sync", "fr": "Sync Notion", "zh": "Notion 同步"},
+     "p": {"en": "One-way <b>Plaud → Notion</b>, incremental (diff by hash). Pushes every note in full and uploads images as persistent Notion files.",
+           "fr": "Sens unique <b>Plaud → Notion</b>, incrémental (diff par hash). Pousse chaque note en entier et téléverse les images en fichiers Notion persistants.",
+           "zh": "單向 <b>Plaud → Notion</b>，增量同步（以雜湊比對差異）。完整推送每則筆記，並將圖片上傳為 Notion 的持久檔案。"}},
+    {"h": {"en": "Export to Word", "fr": "Export vers Word", "zh": "匯出成 Word"},
+     "p": {"en": "Export any note to <b>.docx</b> with its layout and embedded images — generated natively, no dependencies.",
+           "fr": "Exportez n'importe quelle note en <b>.docx</b> avec sa mise en page et ses images — généré nativement, sans dépendance.",
+           "zh": "可將任何筆記匯出成 <b>.docx</b>，保留版面與內嵌圖片——原生產生，零依賴。"}},
+    {"h": {"en": "Localized &amp; themed", "fr": "Localisée et thémée", "zh": "多語言與主題"},
+     "p": {"en": "English, French and Chinese, plus follow-system language. Light, Dark or System appearance.",
+           "fr": "Anglais, français et chinois, plus le suivi de la langue système. Apparence claire, sombre ou système.",
+           "zh": "支援英文、法文與中文，也可跟隨系統語言。外觀可選淺色、深色或跟隨系統。"}},
+    {"h": {"en": "Private by design", "fr": "Privée par conception", "zh": "以隱私為設計前提"},
+     "p": {"en": "Read-only on Plaud, Notion token in the Keychain, and <b>no telemetry</b> — nothing leaves your Mac except calls to Plaud and Notion.",
+           "fr": "Lecture seule sur Plaud, jeton Notion dans le Trousseau, et <b>aucune télémétrie</b> — rien ne quitte votre Mac hormis les appels à Plaud et Notion.",
+           "zh": "對 Plaud 唯讀、Notion 權杖存放在鑰匙圈，而且<b>沒有遙測</b>——除了呼叫 Plaud 與 Notion 之外，沒有任何資料離開你的 Mac。"}}
+  ],
+  "chapters": [
+    {"id": "why",
+     "h": {"en": "Made for people who live on a Mac", "fr": "Faite pour ceux qui vivent sur un Mac", "zh": "為以 Mac 為家的人而做"},
+     "blocks": [
+       {"type": "p", "t": {
+         "en": "Plaud captures your meetings beautifully — but if you want to <b>read, search, archive and reuse</b> that content on macOS, you're stuck switching contexts. Plaud Companion is a featherweight document app that puts every recording, note and transcript one keystroke away, and now lets you pivot the whole library <b>by who was in the room</b>.",
+         "fr": "Plaud capture magnifiquement vos réunions — mais si vous voulez <b>lire, chercher, archiver et réutiliser</b> ce contenu sur macOS, vous passez votre temps à changer de contexte. Plaud Companion est une app document plume qui met chaque enregistrement, note et transcription à une touche, et permet désormais de pivoter toute la bibliothèque <b>par qui était dans la pièce</b>.",
+         "zh": "Plaud 把你的會議記錄得很漂亮——但如果你想在 macOS 上<b>閱讀、搜尋、封存與再利用</b>這些內容，就得不停切換情境。Plaud Companion 是一個輕如羽毛的文件應用程式，讓每一段錄音、筆記與逐字稿都只差一個按鍵，現在還能<b>依當時在場的人</b>重新樞紐整個資料庫。"}},
+       {"type": "specs", "items": [
+         {"h": {"en": "Read-only", "fr": "Lecture seule", "zh": "唯讀"},
+          "p": {"en": "Never edits your Plaud data", "fr": "Ne modifie jamais vos données Plaud", "zh": "絕不修改你的 Plaud 資料"}},
+         {"h": {"en": "Offline", "fr": "Hors ligne", "zh": "離線"},
+          "p": {"en": "Local cache for instant reopen", "fr": "Cache local pour une réouverture instantanée", "zh": "本機快取，重新開啟即時可用"}},
+         {"h": "EN · FR · ZH",
+          "p": {"en": "Three languages built in", "fr": "Trois langues intégrées", "zh": "內建三種語言"}},
+         {"h": "0",
+          "p": {"en": "Trackers &amp; telemetry", "fr": "Traceurs et télémétrie", "zh": "追蹤器與遙測"}}
+       ]}
+     ]},
+    {"id": "notion",
+     "h": {"en": "Your voice notes, wherever you work", "fr": "Vos notes vocales, où que vous travailliez", "zh": "你的語音筆記，跟著你工作的地方走"},
+     "p": {"en": "Authenticate once with your own Plaud session, read everything on your Mac, and optionally mirror it into Notion — incrementally, so you never re-copy the same note twice.",
+           "fr": "Authentifiez-vous une fois avec votre propre session Plaud, lisez tout sur votre Mac, et miroitez-le si vous voulez dans Notion — de façon incrémentale, pour ne jamais recopier deux fois la même note.",
+           "zh": "以你自己的 Plaud 工作階段驗證一次，就能在 Mac 上讀取全部內容，並可選擇鏡射到 Notion——採增量方式，同一則筆記絕不會被重複複製。"},
+     "blocks": [{"type": "specs", "items": [
+       {"h": {"en": "Plaud API", "fr": "API Plaud", "zh": "Plaud API"},
+        "p": {"en": "Reads your recordings, notes and transcripts — read-only, with your own token.",
+              "fr": "Lit vos enregistrements, notes et transcriptions — en lecture seule, avec votre propre jeton.",
+              "zh": "讀取你的錄音、筆記與逐字稿——唯讀，並使用你自己的權杖。"}},
+       {"h": "Plaud Companion",
+        "p": {"en": "Native SwiftUI app: browse, read, search, by date or by person. Cached offline.",
+              "fr": "App SwiftUI native : parcourir, lire, chercher, par date ou par personne. Mise en cache hors ligne.",
+              "zh": "原生 SwiftUI 應用程式：可依日期或人物瀏覽、閱讀與搜尋。離線快取。"}},
+       {"h": "Notion",
+        "p": {"en": "Optional one-way sync — database or page, images uploaded, only changes written.",
+              "fr": "Sync unidirectionnelle optionnelle — base ou page, images téléversées, seuls les changements sont écrits.",
+              "zh": "可選的單向同步——寫入資料庫或頁面，圖片一併上傳，且只寫入變動的部分。"}}
+     ]}]},
+    {"id": "install",
+     "h": {"en": "Up and running in a minute", "fr": "Opérationnel en une minute", "zh": "一分鐘內開始使用"},
+     "p": {"en": "No App Store, no sign-up. Notarized by Apple — it launches by double-click, even offline.",
+           "fr": "Pas d'App Store, pas d'inscription. Notariée par Apple — elle se lance d'un double-clic, même hors ligne.",
+           "zh": "不需 App Store，也不需註冊。已通過 Apple 公證——即使離線，按兩下也能啟動。"},
+     "blocks": [
+       {"type": "steps", "items": [
+         {"en": "<b>Download.</b> Grab the latest signed <code>.dmg</code> from GitHub Releases and drag <b>Plaud&nbsp;Companion</b> into <code>/Applications</code>.",
+          "fr": "<b>Télécharger.</b> Récupérez le dernier <code>.dmg</code> signé depuis GitHub Releases et glissez <b>Plaud&nbsp;Companion</b> dans <code>/Applications</code>.",
+          "zh": "<b>下載。</b>從 GitHub Releases 取得最新的已簽章 <code>.dmg</code>，並把 <b>Plaud&nbsp;Companion</b> 拖入 <code>/Applications</code>。"},
+         {"en": "<b>Authenticate.</b> The app reuses your Plaud session from <code>~/.plaud/tokens-mcp.json</code> (created via the Plaud MCP <code>login</code>). Paste it in Settings if needed.",
+          "fr": "<b>S'authentifier.</b> L'app réutilise votre session Plaud depuis <code>~/.plaud/tokens-mcp.json</code> (créée par le <code>login</code> du MCP Plaud). Collez-la dans les Réglages si besoin.",
+          "zh": "<b>驗證。</b>應用程式會沿用 <code>~/.plaud/tokens-mcp.json</code> 中的 Plaud 工作階段（由 Plaud MCP 的 <code>login</code> 建立）。必要時可在設定中貼上。"},
+         {"en": "<b>Browse.</b> Your recordings appear instantly. Switch to <b>People</b> to explore them by speaker, or open <b>Settings → Notion</b> to sync.",
+          "fr": "<b>Parcourir.</b> Vos enregistrements apparaissent instantanément. Basculez sur <b>Personnes</b> pour les explorer par locuteur, ou ouvrez <b>Réglages → Notion</b> pour synchroniser.",
+          "zh": "<b>瀏覽。</b>你的錄音會立刻出現。切換到<b>人物</b>即可依發言者瀏覽，或開啟<b>設定 → Notion</b> 進行同步。"}
+       ]},
+       {"type": "p", "t": {
+         "en": "<b>Authentication.</b> Plaud Companion never asks for your Plaud password — it reuses the OAuth session created by the <a href=\"https://www.npmjs.com/package/@plaud-ai/mcp\">Plaud MCP server</a> and refreshes it automatically. Speaker labels come from Plaud's diarization; rename speakers in Plaud and hit <b>Refresh</b> to get real names everywhere — including the People directory.",
+         "fr": "<b>Authentification.</b> Plaud Companion ne demande jamais votre mot de passe Plaud — elle réutilise la session OAuth créée par le <a href=\"https://www.npmjs.com/package/@plaud-ai/mcp\">serveur MCP Plaud</a> et la renouvelle automatiquement. Les noms de locuteurs viennent de la diarisation de Plaud ; renommez les locuteurs dans Plaud puis cliquez sur <b>Actualiser</b> pour voir les vrais noms partout — y compris dans l'annuaire Personnes.",
+         "zh": "<b>驗證。</b>Plaud Companion 絕不會要求你的 Plaud 密碼——它沿用由 <a href=\"https://www.npmjs.com/package/@plaud-ai/mcp\">Plaud MCP 伺服器</a>建立的 OAuth 工作階段，並自動更新。發言者標籤來自 Plaud 的說話者分離；在 Plaud 中為發言者重新命名後按下<b>重新整理</b>，就能在各處看到真實姓名——包括人物名錄。"}}
+     ]}
+  ],
+  "close": {
+    "h": {"en": "Bring your Plaud notes home to macOS", "fr": "Ramenez vos notes Plaud sur macOS", "zh": "把你的 Plaud 筆記帶回 macOS"},
+    "p": {"en": "Free, open-source, signed &amp; notarized. macOS 14 Sonoma or later.",
+          "fr": "Gratuite, open source, signée et notariée. macOS 14 Sonoma ou ultérieur.",
+          "zh": "免費、開源、已簽章與公證。macOS 14 Sonoma 或以上版本。"},
+    "actions": [
+      {"primary": true, "href": "https://github.com/vincentlauriat/plaud-companion/releases/latest",
+       "label": {"en": "Download for macOS", "fr": "Télécharger pour macOS", "zh": "下載 macOS 版"}},
+      {"href": "https://github.com/vincentlauriat/plaud-companion#readme",
+       "label": {"en": "Read the docs", "fr": "Lire la doc", "zh": "閱讀說明文件"}}
+    ]
+  },
+  "colophon": {
+    "notes": [
+      {"en": "Unofficial third-party app · not affiliated with, endorsed by, or supported by Plaud.",
+       "fr": "App tierce non officielle · sans affiliation, approbation ni support de Plaud.",
+       "zh": "非官方第三方應用程式 · 與 Plaud 無隸屬關係，亦未獲其背書或支援。"}
+    ]
+  }
+}
