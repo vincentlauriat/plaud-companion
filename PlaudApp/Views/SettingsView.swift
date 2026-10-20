@@ -8,6 +8,8 @@ struct SettingsView: View {
     @State private var plaudInfo: PlaudTokenInfo?
     @State private var refreshingPlaud = false
     @State private var plaudMessage: String?
+    @State private var loggingIn = false
+    @State private var loginTask: Task<Void, Never>?
     #if os(iOS)
     @State private var tokenInput = ""
     @State private var tokenPresent = false
@@ -24,11 +26,26 @@ struct SettingsView: View {
             // token visible et permet de le renouveler sans attendre un échec réseau.
             Section(settings.t("settings_plaud_account")) {
                 plaudStatusRows
-                Text(settings.t("plaud_reconnect_help"))
+                if PlaudOAuth.isConfigured {
+                    HStack {
+                        Button(settings.t("plaud_login")) {
+                            loginTask = Task { await loginToPlaud() }
+                        }
+                        .disabled(loggingIn)
+                        if loggingIn {
+                            ProgressView().scaleEffect(0.6)
+                            Text(settings.t("plaud_login_waiting")).font(.caption).foregroundStyle(.secondary)
+                            Button(settings.t("cancel")) { loginTask?.cancel() }
+                        }
+                    }
+                }
+                Text(settings.t(PlaudOAuth.isConfigured ? "plaud_login_help" : "plaud_reconnect_help"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
             .task { plaudInfo = await TokenStore.shared.tokenInfo() }
+            // Fermer les Réglages abandonne une connexion en cours (libère le port 8199).
+            .onDisappear { loginTask?.cancel() }
             #endif
 
             #if os(iOS)
@@ -193,6 +210,24 @@ struct SettingsView: View {
         plaudInfo = await TokenStore.shared.tokenInfo()
         refreshingPlaud = false
     }
+
+    #if os(macOS)
+    private func loginToPlaud() async {
+        loggingIn = true
+        plaudMessage = nil
+        do {
+            try await PlaudOAuth.shared.login()
+            plaudMessage = settings.t("plaud_login_ok")
+            NotificationCenter.default.post(name: .plaudDidLogin, object: nil)
+        } catch is CancellationError {
+            plaudMessage = nil
+        } catch {
+            plaudMessage = error.localizedDescription
+        }
+        plaudInfo = await TokenStore.shared.tokenInfo()
+        loggingIn = false
+    }
+    #endif
 
     #if os(iOS)
     private func saveToken() async {

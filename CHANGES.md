@@ -1,5 +1,41 @@
 # CHANGES
 
+## 2026-10-20 — Analysis: in-app Plaud re-login
+
+### Fixed
+- Plaud session reconnected again via `mcp__plaud__login` (MCP returned "Not authenticated").
+
+### Decisions
+- Analysed `@plaud-ai/mcp` 0.3.14 OAuth flow: public client (empty secret), PKCE S256, loopback
+  redirect `http://localhost:8199/auth/callback`. A native in-app login is feasible on macOS;
+  plan in `PLAN.md` (option A), pending Vincent's approval on reusing the MCP client_id.
+- Vincent chose a **dedicated OAuth client** instead of reusing the MCP one. No self-service
+  registration exists at Plaud → client must be requested from Plaud; implementation blocked on it.
+
+### Added
+- `PlaudOAuth.swift` (macOS): in-app Plaud sign-in, OAuth code + PKCE S256, loopback listener
+  on `localhost:8199` (IPv4 + IPv6), token exchange, tokens saved to `~/.plaud/tokens-mcp.json`.
+  Enabled only when `PlaudOAuthClientID` (Info.plist, empty for now) is set.
+- Settings → Plaud account: "Sign in to Plaud…" button + help text (FR/EN/ZH); list reloads
+  after sign-in (`.plaudDidLogin`).
+
+### Changed
+- `TokenStore`: new `store(_:)`; `save` creates `~/.plaud` 0700 and the file 0600 when missing;
+  after a failed refresh, re-reads the file in case the MCP or a login rewrote it.
+- `PlaudError` messages point to the in-app sign-in when configured, else to the MCP login.
+
+### Verified
+- `xcodebuild` macOS + iOS: BUILD SUCCEEDED. Callback server harness: callback received via
+  `127.0.0.1`, `[::1]` and `localhost`, other paths → 404, port already in use → `listenFailed`.
+  End-to-end sign-in not testable until Plaud issues the client_id.
+- Code review (separate pass) fixes: sign-in cancellable (Cancel button, cancelled when Settings
+  closes); no `allowLocalEndpointReuse` so a concurrent MCP login fails fast; callback server ignores
+  requests with a wrong `state` (400) instead of aborting; neutral browser page; token file written
+  via temp file 0600 + rename, dir/file permissions re-applied on every save; `SecRandomCopyBytes`
+  checked; ASCII-only form encoding. Re-verified: both builds, harness (state filter, cancel frees
+  the port, busy port → `listenFailed`), save test (0700/0600, no temp file left).
+- Open question for Plaud: token endpoint must accept a public client (empty secret in Basic auth).
+
 ## 2026-09-01 — Reconnexion Plaud (token expiré) + durée de vie des tokens documentée
 
 ### Fixed

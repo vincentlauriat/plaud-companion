@@ -46,7 +46,18 @@ Source de vérité technique du projet Plaud.
 
 - Lit `~/.plaud/tokens-mcp.json` (partagé avec le MCP).
 - Refresh si `expires_at − now < 60 s` : POST `…/oauth/third-party/access-token/refresh`.
-- Réécrit le token dans le même fichier (compat MCP).
+- Réécrit le token dans le même fichier (compat MCP), dossier 0700 / fichier 0600 (recréé si le MCP l'a supprimé).
+- Si un refresh échoue, relit le fichier avant d'abandonner : le MCP ou un login a pu y écrire des tokens neufs.
+
+## Connexion intégrée (PlaudOAuth, macOS)
+
+- `PlaudOAuth.swift` : OAuth 2 authorization code + **PKCE S256**, client **public dédié**
+  (`PlaudOAuthClientID` dans `Info.plist`). Clé vide → fonction désactivée, bouton caché.
+- Ouvre `https://web.plaud.ai/platform/oauth` dans le navigateur ; un `NWListener` restreint à
+  l'interface loopback (IPv4 + IPv6) attend `http://localhost:8199/auth/callback` (120 s).
+- Vérifie `state`, échange le code sur `…/oauth/third-party/access-token` (Basic `client_id:`),
+  enregistre via `TokenStore.store(_:)`, puis notifie `.plaudDidLogin` (rechargement de la liste).
+- iOS : non concerné (collage du token).
 - Sécurité : les valeurs de token ne sont jamais affichées ni loggées.
 
 ## Cache (PlaudCache)
