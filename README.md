@@ -290,6 +290,7 @@ plaud-companion/
 - [x] **Browse recordings by person** (People directory from speaker diarization)
 - [x] Prebuilt signed `.dmg` on the Releases page
 - [x] **Automatic updates** (Sparkle 2, EdDSA-signed appcast) + Plaud account status in Settings
+- [ ] **In‑app Plaud sign‑in** (OAuth PKCE) — implemented, enabled once Plaud issues a dedicated OAuth client
 - [ ] Cache raw transcription & outline (currently re‑fetched per open)
 - [ ] Built‑in audio player synced to transcript timestamps
 - [ ] Export a recording to Markdown / PDF

@@ -36,6 +36,10 @@
   the port, busy port → `listenFailed`), save test (0700/0600, no temp file left).
 - Open question for Plaud: token endpoint must accept a public client (empty secret in Basic auth).
 
+### Released / Process
+- PR #3 squash-merged into `main` (`8f989bd`). Gmail draft of the OAuth client request created
+  (recipient to fill by Vincent). README roadmap: in-app sign-in listed as pending the Plaud client.
+
 ## 2026-09-01 — Reconnexion Plaud (token expiré) + durée de vie des tokens documentée
 
 ### Fixed
