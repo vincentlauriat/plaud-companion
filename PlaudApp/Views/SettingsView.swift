@@ -9,6 +9,7 @@ struct SettingsView: View {
     @State private var refreshingPlaud = false
     @State private var plaudMessage: String?
     @State private var loggingIn = false
+    @State private var loginTask: Task<Void, Never>?
     #if os(iOS)
     @State private var tokenInput = ""
     @State private var tokenPresent = false
@@ -28,12 +29,13 @@ struct SettingsView: View {
                 if PlaudOAuth.isConfigured {
                     HStack {
                         Button(settings.t("plaud_login")) {
-                            Task { await loginToPlaud() }
+                            loginTask = Task { await loginToPlaud() }
                         }
                         .disabled(loggingIn)
                         if loggingIn {
                             ProgressView().scaleEffect(0.6)
                             Text(settings.t("plaud_login_waiting")).font(.caption).foregroundStyle(.secondary)
+                            Button(settings.t("cancel")) { loginTask?.cancel() }
                         }
                     }
                 }
@@ -42,6 +44,8 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
             .task { plaudInfo = await TokenStore.shared.tokenInfo() }
+            // Fermer les Réglages abandonne une connexion en cours (libère le port 8199).
+            .onDisappear { loginTask?.cancel() }
             #endif
 
             #if os(iOS)
@@ -215,6 +219,8 @@ struct SettingsView: View {
             try await PlaudOAuth.shared.login()
             plaudMessage = settings.t("plaud_login_ok")
             NotificationCenter.default.post(name: .plaudDidLogin, object: nil)
+        } catch is CancellationError {
+            plaudMessage = nil
         } catch {
             plaudMessage = error.localizedDescription
         }

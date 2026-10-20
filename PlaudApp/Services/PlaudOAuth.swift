@@ -6,6 +6,8 @@ import Network
 
 enum PlaudOAuthError: LocalizedError {
     case notConfigured
+    case alreadyInProgress
+    case randomFailed
     case listenFailed(String)
     case timeout
     case denied(String)
@@ -16,6 +18,8 @@ enum PlaudOAuthError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .notConfigured: return "Connexion Plaud intégrée non configurée (client OAuth absent)."
+        case .alreadyInProgress: return "Une connexion Plaud est déjà en cours."
+        case .randomFailed: return "Impossible de générer les secrets de connexion (aléa système indisponible)."
         case .listenFailed(let reason):
             return "Impossible d'écouter sur localhost:8199 (\(reason)). Un autre login Plaud est peut-être en cours."
         case .timeout: return "Connexion Plaud abandonnée : aucune réponse du navigateur en 2 minutes."
@@ -63,13 +67,13 @@ actor PlaudOAuth {
     /// sur localhost puis échange le code contre des tokens.
     func login() async throws {
         guard let clientID = Self.clientID else { throw PlaudOAuthError.notConfigured }
-        guard !inProgress else { throw PlaudOAuthError.listenFailed("connexion déjà en cours") }
+        guard !inProgress else { throw PlaudOAuthError.alreadyInProgress }
         inProgress = true
         defer { inProgress = false }
 
-        let verifier = Self.randomBase64URL(byteCount: 32)
+        let verifier = try Self.randomBase64URL(byteCount: 32)
         let challenge = Self.base64URL(Data(SHA256.hash(data: Data(verifier.utf8))))
-        let state = Self.randomBase64URL(byteCount: 16)
+        let state = try Self.randomBase64URL(byteCount: 16)
 
         var comps = URLComponents(string: authorizationURL)!
         comps.queryItems = [
@@ -82,7 +86,7 @@ actor PlaudOAuth {
         ]
         guard let authURL = comps.url else { throw URLError(.badURL) }
 
-        let server = OAuthCallbackServer(port: port, path: callbackPath)
+        let server = OAuthCallbackServer(port: port, path: callbackPath, expectedState: state)
         let items = try await server.waitForCallback(timeout: 120) {
             DispatchQueue.main.async { NSWorkspace.shared.open(authURL) }
         }
@@ -141,9 +145,11 @@ actor PlaudOAuth {
 
     // MARK: - Helpers
 
-    private static func randomBase64URL(byteCount: Int) -> String {
+    private static func randomBase64URL(byteCount: Int) throws -> String {
         var bytes = [UInt8](repeating: 0, count: byteCount)
-        _ = SecRandomCopyBytes(kSecRandomDefault, byteCount, &bytes)
+        guard SecRandomCopyBytes(kSecRandomDefault, byteCount, &bytes) == errSecSuccess else {
+            throw PlaudOAuthError.randomFailed
+        }
         return base64URL(Data(bytes))
     }
 
@@ -155,8 +161,9 @@ actor PlaudOAuth {
     }
 
     private static func formEncode(_ pairs: [(String, String)]) -> String {
-        var allowed = CharacterSet.alphanumerics
-        allowed.insert(charactersIn: "-._~")
+        // Caractères non réservés RFC 3986, ASCII uniquement.
+        let allowed = CharacterSet(charactersIn:
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~")
         return pairs.map { key, value in
             let v = value.addingPercentEncoding(withAllowedCharacters: allowed) ?? value
             return "\(key)=\(v)"
@@ -166,18 +173,22 @@ actor PlaudOAuth {
 
 /// Mini serveur HTTP sur l'interface loopback (IPv4 et IPv6 : les navigateurs
 /// résolvent souvent `localhost` en `::1`) qui attend une seule redirection OAuth.
+/// Seule une requête portant le `state` attendu termine l'attente : un onglet périmé
+/// ou une requête parasite reçoit un 400 sans interrompre la connexion en cours.
 private final class OAuthCallbackServer: @unchecked Sendable {
     private let port: UInt16
     private let path: String
+    private let expectedState: String
     private let queue = DispatchQueue(label: "PlaudOAuth.callback")
     // Accédés uniquement sur `queue`.
     private var listener: NWListener?
     private var continuation: CheckedContinuation<[URLQueryItem], Error>?
     private var finished = false
 
-    init(port: UInt16, path: String) {
+    init(port: UInt16, path: String, expectedState: String) {
         self.port = port
         self.path = path
+        self.expectedState = expectedState
     }
 
     func waitForCallback(timeout: TimeInterval,
@@ -200,8 +211,9 @@ private final class OAuthCallbackServer: @unchecked Sendable {
         continuation = cont
 
         let params = NWParameters.tcp
+        // Pas de `allowLocalEndpointReuse` : si le login du MCP Plaud occupe déjà le port,
+        // l'écoute doit échouer tout de suite plutôt que de laisser le MCP capter le retour.
         params.requiredInterfaceType = .loopback
-        params.allowLocalEndpointReuse = true
         let listener: NWListener
         do {
             listener = try NWListener(using: params, on: NWEndpoint.Port(rawValue: port)!)
@@ -255,13 +267,14 @@ private final class OAuthCallbackServer: @unchecked Sendable {
             return
         }
         let items = comps.queryItems ?? []
-        if items.contains(where: { $0.name == "error" }) {
-            respond(on: conn, status: "200 OK", title: "Connexion refusée",
-                    message: "Retourne dans Plaud Companion.")
-        } else {
-            respond(on: conn, status: "200 OK", title: "Connexion Plaud reçue",
-                    message: "Tu peux fermer cet onglet et revenir dans Plaud Companion.")
+        guard items.first(where: { $0.name == "state" })?.value == expectedState else {
+            respond(on: conn, status: "400 Bad Request", title: "Plaud Companion",
+                    message: "Requête ignorée : elle ne correspond pas à la connexion en cours.")
+            return
         }
+        // Le résultat (échange du code) n'est pas encore connu : message neutre.
+        respond(on: conn, status: "200 OK", title: "Retour vers Plaud Companion",
+                message: "Tu peux fermer cet onglet : le résultat s'affiche dans Plaud Companion.")
         finish(.success(items))
     }
 

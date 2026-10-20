@@ -138,19 +138,23 @@ actor TokenStore {
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted
         let data = try encoder.encode(tokens)
-        // Mêmes droits que le MCP Plaud : dossier 0700, fichier 0600. Le fichier peut
-        // avoir été supprimé (le MCP l'efface quand le refresh token est rejeté) : on le
-        // recrée vide en 0600 avant d'écrire, pour ne jamais exposer les tokens en 0644.
+        // Mêmes droits que le MCP Plaud : dossier 0700, fichier 0600, réappliqués à chaque
+        // écriture. Fichier temporaire créé directement en 0600 puis renommé : le MCP ne
+        // lit jamais un JSON à moitié écrit, et les tokens ne passent jamais par du 0644.
         let fm = FileManager.default
         let dir = tokenURL.deletingLastPathComponent()
-        if !fm.fileExists(atPath: dir.path) {
-            try fm.createDirectory(at: dir, withIntermediateDirectories: true,
-                                   attributes: [.posixPermissions: 0o700])
+        try fm.createDirectory(at: dir, withIntermediateDirectories: true)
+        try fm.setAttributes([.posixPermissions: 0o700], ofItemAtPath: dir.path)
+        let tmp = dir.appendingPathComponent(".\(tokenURL.lastPathComponent).\(UUID().uuidString)")
+        guard fm.createFile(atPath: tmp.path, contents: data,
+                            attributes: [.posixPermissions: 0o600]) else {
+            throw CocoaError(.fileWriteUnknown)
         }
-        if !fm.fileExists(atPath: tokenURL.path) {
-            fm.createFile(atPath: tokenURL.path, contents: nil, attributes: [.posixPermissions: 0o600])
+        if rename(tmp.path, tokenURL.path) != 0 {
+            let code = errno
+            try? fm.removeItem(at: tmp)
+            throw POSIXError(POSIXErrorCode(rawValue: code) ?? .EIO)
         }
-        try data.write(to: tokenURL)
     }
 
     private func refresh(_ tokens: TokenSet) async throws -> TokenSet {
