@@ -61,6 +61,11 @@ struct ContentView: View {
             }
         }
         .task { await vm.loadRecordings() }
+        #if os(macOS)
+        .onReceive(NotificationCenter.default.publisher(for: .plaudDidLogin)) { _ in
+            Task { await vm.loadRecordings(forceRefresh: true) }
+        }
+        #endif
         .onChange(of: selectedId) { _, id in
             guard let id, let rec = vm.recordings.first(where: { $0.id == id }) else { return }
             Task { await vm.selectRecording(rec) }

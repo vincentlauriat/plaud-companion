@@ -68,6 +68,9 @@ targets:
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         LSMinimumSystemVersion: "14.0"
         NSHumanReadableCopyright: ""
+        # Client OAuth public dédié attribué par Plaud (connexion intégrée, PlaudOAuth.swift).
+        # Vide = connexion intégrée désactivée (bouton caché) ; reconnexion via le login MCP.
+        PlaudOAuthClientID: ""
         # Sparkle 2 — auto-update. La clé publique EdDSA correspond à la clé privée
         # du trousseau (compte "PlaudCompanion") utilisée par sign_update dans
         # Scripts/release.sh. NE JAMAIS régénérer la paire ni changer cette valeur :

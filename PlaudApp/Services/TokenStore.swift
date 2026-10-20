@@ -11,17 +11,27 @@ enum PlaudError: LocalizedError {
             #if os(iOS)
             return "Token Plaud introuvable. Colle ton token dans les Réglages (⚙️)."
             #else
-            return "Token Plaud introuvable. Connecte-toi d'abord via Claude Code."
+            return "Token Plaud introuvable. \(Self.reconnectHint)"
             #endif
-        case .noRefreshToken: return "Token expiré et aucun refresh token disponible. Reconnecte-toi via Claude Code."
+        case .noRefreshToken: return "Token expiré et aucun refresh token disponible. \(Self.reconnectHint)"
         case .httpError(let code):
             switch code {
             case 401, 403:
-                return "Accès refusé (HTTP \(code)). Ta session Plaud a peut-être expiré — reconnecte-toi (login Plaud)."
+                return "Accès refusé (HTTP \(code)). Ta session Plaud a peut-être expiré. \(Self.reconnectHint)"
             default:
                 return "Erreur HTTP \(code)"
             }
         }
+    }
+
+    /// Où se reconnecter : dans l'app si le client OAuth dédié est configuré, sinon via le MCP.
+    private static var reconnectHint: String {
+        #if os(macOS)
+        if PlaudOAuth.isConfigured { return "Reconnecte-toi dans Réglages → Compte Plaud." }
+        return "Reconnecte-toi via Claude Code (login MCP Plaud)."
+        #else
+        return "Colle un nouveau token dans les Réglages (⚙️)."
+        #endif
     }
 }
 
@@ -57,11 +67,9 @@ actor TokenStore {
         "https://platform.plaud.ai/developer/api/oauth/third-party/access-token/refresh")!
 
     func getAccessToken() async throws -> String {
-        var tokens = try load()
-        if tokens.isExpired {
-            tokens = try await refresh(tokens)
-        }
-        return tokens.accessToken
+        let tokens = try load()
+        guard tokens.isExpired else { return tokens.accessToken }
+        return try await refreshOrReload(tokens)
     }
 
     /// Force un rafraîchissement du token quel que soit `expires_at`. Utile quand
@@ -69,7 +77,25 @@ actor TokenStore {
     /// (révocation ou rotation côté serveur, `expires_at` local trop optimiste).
     func forceRefresh() async throws -> String {
         let tokens = try load()
-        return try await refresh(tokens).accessToken
+        return try await refreshOrReload(tokens)
+    }
+
+    /// Rafraîchit ; en cas d'échec, relit le fichier : le MCP Plaud (ou un login) a pu
+    /// le réécrire entre-temps avec des tokens neufs, rendant notre refresh token caduc.
+    private func refreshOrReload(_ tokens: TokenSet) async throws -> String {
+        do {
+            return try await refresh(tokens).accessToken
+        } catch {
+            if let current = try? load(), current.accessToken != tokens.accessToken, !current.isExpired {
+                return current.accessToken
+            }
+            throw error
+        }
+    }
+
+    /// Enregistre des tokens obtenus par un login (connexion OAuth intégrée).
+    func store(_ tokens: TokenSet) throws {
+        try save(tokens)
     }
 
     /// `true` si un fichier de token valide est présent (décodable).
@@ -111,7 +137,20 @@ actor TokenStore {
     private func save(_ tokens: TokenSet) throws {
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted
-        try encoder.encode(tokens).write(to: tokenURL)
+        let data = try encoder.encode(tokens)
+        // Mêmes droits que le MCP Plaud : dossier 0700, fichier 0600. Le fichier peut
+        // avoir été supprimé (le MCP l'efface quand le refresh token est rejeté) : on le
+        // recrée vide en 0600 avant d'écrire, pour ne jamais exposer les tokens en 0644.
+        let fm = FileManager.default
+        let dir = tokenURL.deletingLastPathComponent()
+        if !fm.fileExists(atPath: dir.path) {
+            try fm.createDirectory(at: dir, withIntermediateDirectories: true,
+                                   attributes: [.posixPermissions: 0o700])
+        }
+        if !fm.fileExists(atPath: tokenURL.path) {
+            fm.createFile(atPath: tokenURL.path, contents: nil, attributes: [.posixPermissions: 0o600])
+        }
+        try data.write(to: tokenURL)
     }
 
     private func refresh(_ tokens: TokenSet) async throws -> TokenSet {
